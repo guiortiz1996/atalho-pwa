@@ -1,0 +1,15 @@
+{
+  "name": "Atalho — Aprenda Excel",
+  "short_name": "Atalho",
+  "description": "Aprenda Excel em lições de 3 minutos, em português.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#107C41",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
