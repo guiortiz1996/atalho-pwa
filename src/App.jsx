@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Heart, Check, X, ChevronRight, ChevronLeft, ChevronDown, Flame, Zap, BookOpen, Lock, Bold, Italic, Underline, PaintBucket, Table, Filter, Snowflake, ArrowDownAZ, Search, Sigma, Percent, DollarSign, AppWindow, MapPin, ZoomIn, LayoutGrid, AlignCenter, Type, Brush, Copy, Columns3, WrapText, Maximize } from "lucide-react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 /* =====================================================
    ATALHO — Motor de teste v0.4
@@ -7511,6 +7512,7 @@ export default function App() {
           </div>
         )}
       </div>
+      <SpeedInsights />
     </Shell>
   );
 }
