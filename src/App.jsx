@@ -6922,7 +6922,9 @@ function prepareExercise(ex) {
   if (merged.tipo === "escolha" && merged.opcoes) merged.opcoesEmbaralhadas = shuffle(merged.opcoes);
   if (merged.tipo === "ligar_pares") {
     merged.esq = shuffle(Object.keys(merged.pares));
-    merged.dir = shuffle(Object.values(merged.pares));
+    // cada item da direita ganha ID próprio: rótulos repetidos (ex: dois "Texto")
+    // continuam sendo botões independentes
+    merged.dir = shuffle(Object.values(merged.pares).map((label, i) => ({ id: `d${i}`, label })));
   }
   if (merged.tipo === "ordenar") merged.passosEmbaralhados = shuffle(merged.passos);
   if (merged.tipo === "tokens") {
@@ -7130,12 +7132,7 @@ function Btn({ children, onClick, color = C.green, dark = C.greenDark, disabled,
 export default function App() {
   const [tela, setTela] = useState("home"); // home | teoria | licao | fim
   const [licaoIdx, setLicaoIdx] = useState(0);
-  // ---- Persistência local (Fase 0: sem backend) ----
-  const carregar = () => { try { return JSON.parse(localStorage.getItem("atalho")) || {}; } catch { return {}; } };
-  const salvarLocal = (d) => { try { localStorage.setItem("atalho", JSON.stringify({ ...carregar(), ...d })); } catch {} };
-  const [concluidas, setConcluidas] = useState(() => carregar().concluidas || []);
-  const [xpTotal, setXpTotal] = useState(() => carregar().xpTotal || 0);
-  const [streak, setStreak] = useState(() => carregar().streak || 0);
+  const [concluidas, setConcluidas] = useState([]);
   const [exs, setExs] = useState([]);
   const [idx, setIdx] = useState(0);
   const [vidas, setVidas] = useState(5);
@@ -7190,30 +7187,19 @@ export default function App() {
 
   const proximo = () => {
     if (idx + 1 >= exs.length) {
-      const novasConcluidas = concluidas.includes(licao.id) ? concluidas : [...concluidas, licao.id];
-      setConcluidas(novasConcluidas);
-      const novoXpTotal = xpTotal + xp;
-      setXpTotal(novoXpTotal);
-      // ofensiva: dia novo em sequência soma; mesmo dia mantém; buraco reinicia
-      const hoje = new Date().toDateString();
-      const ontem = new Date(Date.now() - 86400000).toDateString();
-      const dadosSalvos = carregar();
-      let novaStreak = streak;
-      if (dadosSalvos.ultimoDia !== hoje) novaStreak = dadosSalvos.ultimoDia === ontem ? streak + 1 : 1;
-      setStreak(novaStreak);
-      salvarLocal({ concluidas: novasConcluidas, xpTotal: novoXpTotal, streak: novaStreak, ultimoDia: hoje });
+      setConcluidas((c) => (c.includes(licao.id) ? c : [...c, licao.id]));
       setTela("fim");
     } else { setIdx(idx + 1); resetEx(); }
   };
 
-  const tentarPar = (dir) => {
+  const tentarPar = (item) => {
     if (!esqSel) return;
-    if (ex.pares[esqSel] === dir) {
-      const m = { ...ligacoes, [esqSel]: dir };
+    if (ex.pares[esqSel] === item.label) {
+      const m = { ...ligacoes, [esqSel]: item.id }; // guarda o ID, não o rótulo
       setLigacoes(m); setEsqSel(null);
       if (Object.keys(m).length === ex.esq.length) { setXp((x) => x + 10); setFeedback("correct"); }
     } else {
-      setFlash(dir); setVidas((v) => Math.max(0, v - 1)); setErros((e) => e + 1);
+      setFlash(item.id); setVidas((v) => Math.max(0, v - 1)); setErros((e) => e + 1);
       setTimeout(() => setFlash(null), 500); setEsqSel(null);
     }
   };
@@ -7239,8 +7225,8 @@ export default function App() {
           <div style={{ fontFamily: font.ui, fontSize: 13, color: "#5A6660" }}>o caminho mais curto para dominar as ferramentas do trabalho</div>
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 18, margin: "14px 0 20px", fontFamily: font.ui, fontWeight: 700, color: C.navy }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Flame size={18} color={C.gold} fill={C.gold} /> {streak} {streak === 1 ? "dia" : "dias"}</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Zap size={18} color={C.gold} fill={C.gold} /> {xpTotal} XP</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Flame size={18} color={C.gold} fill={C.gold} /> 6 dias</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Zap size={18} color={C.gold} fill={C.gold} /> 210 XP</span>
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Heart size={18} color={C.red} fill={C.red} /> {vidas}</span>
         </div>
 
@@ -7481,12 +7467,12 @@ export default function App() {
           </div>
           <div style={{ flex: 1.2, display: "flex", flexDirection: "column", gap: 8 }}>
             {ex.dir.map((r) => {
-              const done = Object.values(ligacoes).includes(r);
-              const isFlash = flash === r;
+              const done = Object.values(ligacoes).includes(r.id);
+              const isFlash = flash === r.id;
               return (
-                <button key={r} disabled={done} onClick={() => tentarPar(r)}
+                <button key={r.id} disabled={done} onClick={() => tentarPar(r)}
                   style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, padding: "12px 10px", borderRadius: 10, border: `2px solid ${isFlash ? C.red : done ? "#C9D2CD" : C.line}`, borderBottom: `4px solid ${isFlash ? C.red : done ? "#C9D2CD" : C.line}`, background: isFlash ? "#FBEAEA" : done ? "#EDEFEE" : "#fff", color: isFlash ? C.red : done ? "#B2BDB7" : C.ink, cursor: done ? "default" : "pointer" }}>
-                  {r}
+                  {r.label}
                 </button>
               );
             })}

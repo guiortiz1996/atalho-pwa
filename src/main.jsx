@@ -10,3 +10,10 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   });
 }
+
+// Vercel Web Analytics (injetado em runtime: o Vite não tenta resolver esse caminho no build)
+window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+const _a = document.createElement("script");
+_a.defer = true;
+_a.src = "/_vercel/insights/script.js";
+document.head.appendChild(_a);
