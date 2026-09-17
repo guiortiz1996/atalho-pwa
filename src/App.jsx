@@ -6922,7 +6922,7 @@ function prepareExercise(ex) {
   if (merged.tipo === "escolha" && merged.opcoes) merged.opcoesEmbaralhadas = shuffle(merged.opcoes);
   if (merged.tipo === "ligar_pares") {
     merged.esq = shuffle(Object.keys(merged.pares));
-    // cada item da direita ganha ID próprio: rótulos repetidos (ex: dois "Texto")
+    // cada item da direita tem ID próprio: rótulos repetidos (ex: dois "Texto")
     // continuam sendo botões independentes
     merged.dir = shuffle(Object.values(merged.pares).map((label, i) => ({ id: `d${i}`, label })));
   }
@@ -7129,10 +7129,81 @@ function Btn({ children, onClick, color = C.green, dark = C.greenDark, disabled,
 }
 
 // ---------- App ----------
+// ---------- Feedback (formulário Tally) ----------
+// Cole aqui o ID do seu formulário: em tally.so/r/XXXXXX, o ID é o XXXXXX.
+// Enquanto estiver vazio, os botões de feedback ficam escondidos.
+const TALLY_ID = "44ZaRX";
+
+// Formulário de e-mail (lista de novidades). Mesmo esquema: cole o ID do 2º formulário.
+const TALLY_EMAIL_ID = "lbpajk";
+// Só convida depois que a pessoa concluiu esta quantidade de lições (já sentiu valor).
+const PEDIR_EMAIL_APOS = 2;
+
+// Abre o formulário POR CIMA do app, já com o contexto preenchido.
+function abrirFeedback(contexto) {
+  if (!TALLY_ID) return;
+  const hiddenFields = {
+    ...contexto,
+    tela: `${window.innerWidth}x${window.innerHeight}`,
+    navegador: navigator.userAgent.slice(0, 120),
+    versao: "1.1",
+  };
+  const abrir = () =>
+    window.Tally.openPopup(TALLY_ID, { layout: "modal", width: 460, overlay: true, autoClose: 2500, hiddenFields });
+  if (window.Tally) return abrir();
+  const s = document.createElement("script");
+  s.src = "https://tally.so/widgets/embed.js";
+  s.onload = abrir;
+  // sem internet ou script bloqueado: abre o formulário numa aba nova
+  s.onerror = () => window.open(`https://tally.so/r/${TALLY_ID}?` + new URLSearchParams(hiddenFields), "_blank");
+  document.body.appendChild(s);
+}
+
+// Abre o convite de e-mail; avisa de volta quando a pessoa enviar
+function abrirCaptacaoEmail(contexto, aoEnviar) {
+  if (!TALLY_EMAIL_ID) return;
+  const abrir = () =>
+    window.Tally.openPopup(TALLY_EMAIL_ID, {
+      layout: "modal", width: 460, overlay: true, autoClose: 2000,
+      hiddenFields: { ...contexto, versao: "1.1" },
+      onSubmit: () => aoEnviar && aoEnviar(),
+    });
+  if (window.Tally) return abrir();
+  const s = document.createElement("script");
+  s.src = "https://tally.so/widgets/embed.js";
+  s.onload = abrir;
+  s.onerror = () => window.open(`https://tally.so/r/${TALLY_EMAIL_ID}`, "_blank");
+  document.body.appendChild(s);
+}
+
+// Evento no Vercel Analytics (mostra onde as pessoas param, sem ninguém precisar escrever)
+function track(nome, dados) {
+  try { if (window.va) window.va("event", { name: nome, data: dados }); } catch (e) {}
+}
+
+// Link discreto de feedback
+function LinkFeedback({ texto, onClick, centro }) {
+  if (!TALLY_ID) return null;
+  return (
+    <button onClick={onClick}
+      style={{ display: "block", margin: centro ? "18px auto 0" : "14px 0 0", background: "none", border: "none",
+               fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: "#8A948F", textDecoration: "underline",
+               cursor: "pointer", padding: 4 }}>
+      {texto}
+    </button>
+  );
+}
+
 export default function App() {
   const [tela, setTela] = useState("home"); // home | teoria | licao | fim
   const [licaoIdx, setLicaoIdx] = useState(0);
-  const [concluidas, setConcluidas] = useState([]);
+  // ---- Persistência local (Fase 0: sem backend) ----
+  const carregar = () => { try { return JSON.parse(localStorage.getItem("atalho")) || {}; } catch { return {}; } };
+  const salvarLocal = (d) => { try { localStorage.setItem("atalho", JSON.stringify({ ...carregar(), ...d })); } catch {} };
+  const [concluidas, setConcluidas] = useState(() => carregar().concluidas || []);
+  const [xpTotal, setXpTotal] = useState(() => carregar().xpTotal || 0);
+  const [streak, setStreak] = useState(() => carregar().streak || 0);
+  const [emailStatus, setEmailStatus] = useState(() => carregar().email || null); // "feito" | "depois" | null
   const [exs, setExs] = useState([]);
   const [idx, setIdx] = useState(0);
   const [vidas, setVidas] = useState(5);
@@ -7162,6 +7233,7 @@ export default function App() {
   const iniciarLicao = (mi, li) => {
     setModIdx(mi); setLicaoIdx(li);
     setExs(MODULOS[mi].licoes[li].exercicios.map(prepareExercise)); // variantes + shuffle a cada início
+    track("licao_iniciada", { licao: MODULOS[mi].licoes[li].id, modulo: MODULOS[mi].titulo });
     setIdx(0); setXp(0); setErros(0);
     resetEx();
     setTela("teoria");
@@ -7187,7 +7259,19 @@ export default function App() {
 
   const proximo = () => {
     if (idx + 1 >= exs.length) {
-      setConcluidas((c) => (c.includes(licao.id) ? c : [...c, licao.id]));
+      const novasConcluidas = concluidas.includes(licao.id) ? concluidas : [...concluidas, licao.id];
+      setConcluidas(novasConcluidas);
+      const novoXpTotal = xpTotal + xp;
+      setXpTotal(novoXpTotal);
+      // ofensiva: dia novo em sequência soma; mesmo dia mantém; buraco reinicia
+      const hoje = new Date().toDateString();
+      const ontem = new Date(Date.now() - 86400000).toDateString();
+      const dadosSalvos = carregar();
+      let novaStreak = streak;
+      if (dadosSalvos.ultimoDia !== hoje) novaStreak = dadosSalvos.ultimoDia === ontem ? streak + 1 : 1;
+      setStreak(novaStreak);
+      salvarLocal({ concluidas: novasConcluidas, xpTotal: novoXpTotal, streak: novaStreak, ultimoDia: hoje });
+      track("licao_concluida", { licao: licao.id, erros, xp });
       setTela("fim");
     } else { setIdx(idx + 1); resetEx(); }
   };
@@ -7225,8 +7309,8 @@ export default function App() {
           <div style={{ fontFamily: font.ui, fontSize: 13, color: "#5A6660" }}>o caminho mais curto para dominar as ferramentas do trabalho</div>
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 18, margin: "14px 0 20px", fontFamily: font.ui, fontWeight: 700, color: C.navy }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Flame size={18} color={C.gold} fill={C.gold} /> 6 dias</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Zap size={18} color={C.gold} fill={C.gold} /> 210 XP</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Flame size={18} color={C.gold} fill={C.gold} /> {streak} {streak === 1 ? "dia" : "dias"}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Zap size={18} color={C.gold} fill={C.gold} /> {xpTotal} XP</span>
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Heart size={18} color={C.red} fill={C.red} /> {vidas}</span>
         </div>
 
@@ -7262,6 +7346,7 @@ export default function App() {
             })}
           </div>
         ))}
+        <LinkFeedback centro texto="Enviar feedback ou reportar um erro" onClick={() => abrirFeedback({ origem: "tela_inicial", licoes_concluidas: concluidas.length })} />
       </Shell>
     );
 
@@ -7322,6 +7407,35 @@ export default function App() {
             <Btn full onClick={() => iniciarLicao(modIdx, licaoIdx)}>Refazer (embaralha tudo)</Btn>
             <Btn full color={C.navy} dark="#082A4A" onClick={() => setTela("home")}>Voltar às lições</Btn>
           </div>
+          {TALLY_EMAIL_ID && !emailStatus && concluidas.length >= PEDIR_EMAIL_APOS && (
+            <div style={{ marginTop: 22, background: C.mist, border: `2px solid ${C.line}`, borderRadius: 16, padding: 16, textAlign: "left" }}>
+              <div style={{ fontFamily: font.ui, fontSize: 15.5, fontWeight: 800, color: C.navy }}>
+                📬 Quer saber quando o app chegar na Play Store?
+              </div>
+              <div style={{ fontFamily: font.ui, fontSize: 13, color: "#5A6660", margin: "6px 0 12px", lineHeight: 1.5 }}>
+                Deixe seu e-mail e eu aviso quando sair — e quando chegarem trilhas novas. Só novidades do Atalho, e você pode sair quando quiser.
+              </div>
+              <Btn full onClick={() => { track("email_convite_aberto", { licoes: concluidas.length }); abrirCaptacaoEmail({ licoes_concluidas: concluidas.length, xp_total: xpTotal }, () => { setEmailStatus("feito"); salvarLocal({ email: "feito" }); track("email_cadastrado", {}); }); }}>
+                Quero ser avisado
+              </Btn>
+              <button onClick={() => { setEmailStatus("depois"); salvarLocal({ email: "depois" }); }}
+                style={{ display: "block", margin: "10px auto 0", background: "none", border: "none", fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: "#8A948F", cursor: "pointer" }}>
+                Agora não
+              </button>
+            </div>
+          )}
+          {emailStatus === "feito" && (
+            <div style={{ marginTop: 20, fontFamily: font.ui, fontSize: 13.5, fontWeight: 700, color: C.greenDark }}>
+              ✓ E-mail cadastrado — te aviso das novidades!
+            </div>
+          )}
+          <LinkFeedback centro texto="Deixar um feedback sobre esta lição" onClick={() => abrirFeedback({
+            origem: "fim_da_licao",
+            modulo: modulo.titulo,
+            licao: `${licao.id} — ${licao.titulo}`,
+            precisao: `${acc}%`,
+            erros,
+          })} />
         </div>
       </Shell>
     );
@@ -7331,7 +7445,7 @@ export default function App() {
   return (
     <Shell>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-        <button onClick={() => setTela("home")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+        <button onClick={() => { track("licao_abandonada", { licao: licao.id, exercicio: idx + 1, de: exs.length }); setTela("home"); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
           <X size={22} color="#8A948F" />
         </button>
         <div style={{ flex: 1, height: 14, background: "#E3E9E5", borderRadius: 8, overflow: "hidden" }}>
@@ -7482,6 +7596,14 @@ export default function App() {
 
       {/* Rodapé */}
       <div style={{ marginTop: 26 }}>
+        <LinkFeedback centro texto="Algo errado nesta pergunta? Avise" onClick={() => abrirFeedback({
+          origem: "exercicio",
+          modulo: modulo.titulo,
+          licao: `${licao.id} — ${licao.titulo}`,
+          exercicio: `${idx + 1} de ${exs.length}`,
+          tipo_exercicio: ex.tipo,
+          pergunta: String(ex.pergunta || ex.afirmacao || "").slice(0, 140),
+        })} />
         {!feedback && ex.tipo !== "ligar_pares" && <Btn full disabled={!podeVerificar} onClick={verificar}>Verificar</Btn>}
         {feedback && (
           <div style={{ background: feedback === "correct" ? "#E9F4EE" : "#FBEAEA", border: `2px solid ${feedback === "correct" ? C.green : C.red}`, borderRadius: 16, padding: 16 }}>
