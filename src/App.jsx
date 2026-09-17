@@ -7308,7 +7308,7 @@ function LinkFeedback({ texto, onClick, centro }) {
 }
 
 export default function App() {
-  const [tela, setTela] = useState("modulo"); // home | teoria | licao | fim
+  const [tela, setTela] = useState("home"); // home | teoria | licao | fim
   const [licaoIdx, setLicaoIdx] = useState(0);
   // ---- Persistência local (Fase 0: sem backend) ----
   const carregar = () => { try { return JSON.parse(localStorage.getItem("atalho")) || {}; } catch { return {}; } };
