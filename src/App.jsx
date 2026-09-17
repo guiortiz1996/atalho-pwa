@@ -7228,6 +7228,13 @@ export default function App() {
   const licao = licoes[licaoIdx];
   const ex = exs[idx];
 
+  // Ao trocar de tela ou de exercício, volta ao topo:
+  // sem isso a página herda a rolagem anterior e abre "no meio"
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+  }, [tela, idx, licaoIdx, modIdx]);
+
   const resetEx = () => { setSel(null); setDigitado(""); setCelula(null); setOrdem([]); setLigacoes({}); setEsqSel(null); setFlash(null); setPicked([]); setUsados([]); setFeedback(null); };
 
   const iniciarLicao = (mi, li) => {
@@ -7431,6 +7438,7 @@ export default function App() {
           )}
           <LinkFeedback centro texto="Deixar um feedback sobre esta lição" onClick={() => abrirFeedback({
             origem: "fim_da_licao",
+            licoes_concluidas: concluidas.length,
             modulo: modulo.titulo,
             licao: `${licao.id} — ${licao.titulo}`,
             precisao: `${acc}%`,
@@ -7598,6 +7606,7 @@ export default function App() {
       <div style={{ marginTop: 26 }}>
         <LinkFeedback centro texto="Algo errado nesta pergunta? Avise" onClick={() => abrirFeedback({
           origem: "exercicio",
+          licoes_concluidas: concluidas.length,
           modulo: modulo.titulo,
           licao: `${licao.id} — ${licao.titulo}`,
           exercicio: `${idx + 1} de ${exs.length}`,
