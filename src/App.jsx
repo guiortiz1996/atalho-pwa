@@ -1997,11 +1997,11 @@ const MODULOS = [
      },
      {
       "tipo": "digitar",
-      "pergunta": "Escreva a fórmula que calcula a {tipo} das vendas (B2:B5):",
+      "pergunta": "Escreva a fórmula que calcula a {funcao} das vendas (B2:B5):",
       "teclado": "formula",
       "variantes": [
        {
-        "tipo": "MÉDIA",
+        "funcao": "MÉDIA",
         "resposta": "=MÉDIA(B2:B5)",
         "aceitar": [
          "=média(b2:b5)",
@@ -2010,7 +2010,7 @@ const MODULOS = [
         ]
        },
        {
-        "tipo": "MÁXIMO (maior venda)",
+        "funcao": "MÁXIMO (maior venda)",
         "resposta": "=MÁXIMO(B2:B5)",
         "aceitar": [
          "=máximo(b2:b5)",
@@ -2019,7 +2019,7 @@ const MODULOS = [
         ]
        },
        {
-        "tipo": "MÍNIMO (menor venda)",
+        "funcao": "MÍNIMO (menor venda)",
         "resposta": "=MÍNIMO(B2:B5)",
         "aceitar": [
          "=mínimo(b2:b5)",
@@ -6915,7 +6915,9 @@ function prepareExercise(ex) {
   let merged = { ...ex };
   if (ex.variantes && ex.variantes.length) {
     const v = ex.variantes[Math.floor(Math.random() * ex.variantes.length)];
-    merged = { ...ex, ...v };
+    // a variante traz parâmetros e resposta, mas NUNCA pode trocar o tipo do
+    // exercício (se um parâmetro se chamar "tipo", a tela deixa de ser desenhada)
+    merged = { ...ex, ...v, tipo: ex.tipo };
     merged.pergunta = substitute(ex.pergunta, v);
     if (merged.opcoes) merged.opcoes = merged.opcoes.map((o) => substitute(o, v));
   }
