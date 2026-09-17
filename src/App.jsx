@@ -8,7 +8,7 @@ import { Heart, Check, X, ChevronRight, ChevronLeft, ChevronDown, Flame, Zap, Bo
    exercício clicar_ribbon: "toque onde fica".
    ===================================================== */
 
-// ---------- CONTEÚDO: Trilhas 1 e 2 completas (gerado dos JSONs) ----------
+// ---------- CONTEÚDO: Trilhas 1 e 2 (gerado dos JSONs) ----------
 const MODULOS = [
  {
   "id": "t1-m1",
@@ -655,7 +655,7 @@ const MODULOS = [
        "Ctrl+B": "Salvar",
        "Ctrl+N": "Negrito"
       },
-      "explicacao": "Na versão em inglês seria diferente — no PT-BR, B de \"gravar\" e N de \"negrito\"."
+      "explicacao": "No PT-BR, B de \"gravar\" o arquivo e N de negrito — as iniciais seguem as palavras em português."
      },
      {
       "tipo": "vf",
@@ -1663,7 +1663,8 @@ const MODULOS = [
       "tipo": "vf",
       "afirmacao": "Se o preço da Areia em B3 mudar de 80 para 90, a fórmula =B3*C3 mostrará o novo total sem que eu faça nada.",
       "resposta": true,
-      "explicacao": "É o recálculo automático — a razão de existir do Excel."
+      "explicacao": "É o recálculo automático — a razão de existir do Excel.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "achar_erro",
@@ -1675,7 +1676,8 @@ const MODULOS = [
        "C3"
       ],
       "indice_errado": 1,
-      "explicacao": "B2 é o preço do Cimento. O preço da Areia está em B3: =B3*C3."
+      "explicacao": "B2 é o preço do Cimento. O preço da Areia está em B3: =B3*C3.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "digitar",
@@ -1816,7 +1818,7 @@ const MODULOS = [
       ],
       "resposta": "Todas as células de B2 até B5",
       "explicacao": "Os dois pontos criam um intervalo: B2, B3, B4 e B5.",
-      "mostrar_planilha": false
+      "mostrar_planilha": true
      },
      {
       "tipo": "tokens",
@@ -1858,7 +1860,8 @@ const MODULOS = [
        ")"
       ],
       "indice_errado": 2,
-      "explicacao": "Com ponto e vírgula, soma SÓ B2 e B5 (2300). Para o intervalo inteiro, dois pontos: B2:B5."
+      "explicacao": "Com ponto e vírgula, soma SÓ B2 e B5 (2300). Para o intervalo inteiro, dois pontos: B2:B5.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "escolha",
@@ -1877,7 +1880,8 @@ const MODULOS = [
       "tipo": "vf",
       "afirmacao": "=SOMA(B2:B5) e =B2+B3+B4+B5 dão o mesmo resultado nesta planilha.",
       "resposta": true,
-      "explicacao": "Mesmo resultado — mas a SOMA escala para mil linhas e a soma manual, não."
+      "explicacao": "Mesmo resultado — mas a SOMA escala para mil linhas e a soma manual, não.",
+      "mostrar_planilha": true
      }
     ]
    },
@@ -1960,15 +1964,15 @@ const MODULOS = [
      },
      {
       "tipo": "escolha",
-      "pergunta": "E =MÉDIA(B2:B5)?",
+      "pergunta": "A soma dessas vendas é 28.000. Então, quanto dá =MÉDIA(B2:B5)?",
       "opcoes": [
        "7000",
        "28000",
-       "6500",
-       "8000"
+       "5600",
+       "11000"
       ],
       "resposta": "7000",
-      "explicacao": "(8000+5000+11000+4000) ÷ 4 = 28000 ÷ 4 = 7000.",
+      "explicacao": "28000 ÷ 4 vendedores = 7000. Dividir por 5 (5600) é o erro clássico: o cabeçalho não é venda.",
       "mostrar_planilha": true
      },
      {
@@ -1997,35 +2001,35 @@ const MODULOS = [
      },
      {
       "tipo": "digitar",
-      "pergunta": "Escreva a fórmula que calcula a {funcao} das vendas (B2:B5):",
+      "pergunta": "Escreva a fórmula de {funcao} das vendas (B2:B5):",
       "teclado": "formula",
       "variantes": [
        {
-        "funcao": "MÉDIA",
         "resposta": "=MÉDIA(B2:B5)",
         "aceitar": [
          "=média(b2:b5)",
          "=MEDIA(B2:B5)",
          "=media(b2:b5)"
-        ]
+        ],
+        "funcao": "MÉDIA"
        },
        {
-        "funcao": "MÁXIMO (maior venda)",
         "resposta": "=MÁXIMO(B2:B5)",
         "aceitar": [
          "=máximo(b2:b5)",
          "=MAXIMO(B2:B5)",
          "=maximo(b2:b5)"
-        ]
+        ],
+        "funcao": "MÁXIMO (maior venda)"
        },
        {
-        "funcao": "MÍNIMO (menor venda)",
         "resposta": "=MÍNIMO(B2:B5)",
         "aceitar": [
          "=mínimo(b2:b5)",
          "=MINIMO(B2:B5)",
          "=minimo(b2:b5)"
-        ]
+        ],
+        "funcao": "MÍNIMO (menor venda)"
        }
       ],
       "explicacao": "Mesma estrutura da SOMA: nome da função + intervalo entre parênteses.",
@@ -2125,7 +2129,8 @@ const MODULOS = [
       "tipo": "vf",
       "afirmacao": "Comparando CONT.VALORES(A2:A5)=4 com CONT.NÚM(B2:B5)=2, dá pra concluir que 2 clientes ainda não pagaram.",
       "resposta": true,
-      "explicacao": "4 clientes − 2 pagamentos = 2 pendências. Duas funções simples virando informação de negócio."
+      "explicacao": "4 clientes − 2 pagamentos = 2 pendências. Duas funções simples virando informação de negócio.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "tokens",
@@ -2154,7 +2159,8 @@ const MODULOS = [
        ")"
       ],
       "indice_errado": 0,
-      "explicacao": "Nomes são texto — CONT.NÚM retornaria 0. Para contar clientes, use CONT.VALORES(A2:A5)."
+      "explicacao": "Nomes são texto — CONT.NÚM retornaria 0. Para contar clientes, use CONT.VALORES(A2:A5).",
+      "mostrar_planilha": true
      }
     ]
    }
@@ -2358,7 +2364,7 @@ const MODULOS = [
        "Pressionar Enter para confirmar",
        "Selecionar D2 e arrastar a alça até D4"
       ],
-      "explicacao": "Uma fórmula, um arrasto, coluna inteira calculada.",
+      "explicacao": "O Enter vem ANTES do arrasto: enquanto a fórmula está sendo digitada a célula está em edição e a alça nem existe. Confirmou, aí sim arrasta.",
       "mostrar_planilha": true
      },
      {
@@ -2480,7 +2486,8 @@ const MODULOS = [
        "B1"
       ],
       "indice_errado": 3,
-      "explicacao": "B1 sem cifrão vai virar B2 (vazia!) ao arrastar. Precisa ser $B$1."
+      "explicacao": "B1 sem cifrão vai virar B2 (vazia!) ao arrastar. Precisa ser $B$1.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "escolha",
@@ -3322,9 +3329,9 @@ const MODULOS = [
      },
      {
       "tipo": "vf",
-      "afirmacao": "No Excel em português, Ctrl+F abre o Localizar, igual à versão em inglês.",
+      "afirmacao": "No Excel em português, Ctrl+F abre o Localizar.",
       "resposta": false,
-      "explicacao": "No PT-BR o Localizar é Ctrl+L. (Ctrl+F abre a fonte em alguns programas — sempre confira em qual idioma está o Excel.)"
+      "explicacao": "No PT-BR o Localizar é Ctrl+L. O Ctrl+F é hábito de navegador e do Word — aqui ele não faz nada. Shift+F5 também abre."
      },
      {
       "tipo": "ordenar",
@@ -3483,7 +3490,8 @@ const MODULOS = [
        ")"
       ],
       "indice_errado": 3,
-      "explicacao": "Texto sem aspas! O Excel acha que Aprovado é um nome de intervalo e devolve #NOME?. Correto: \"Aprovado\"."
+      "explicacao": "Texto sem aspas! O Excel acha que Aprovado é um nome de intervalo e devolve #NOME?. Correto: \"Aprovado\".",
+      "mostrar_planilha": true
      },
      {
       "tipo": "vf",
@@ -3841,7 +3849,8 @@ const MODULOS = [
        ";\"C\")"
       ],
       "indice_errado": 1,
-      "explicacao": "Testando >=6000 PRIMEIRO, quem vendeu 12000 também passa nesse teste e vira B — o A nunca acontece. Sempre da maior faixa para a menor."
+      "explicacao": "Testando >=6000 PRIMEIRO, quem vendeu 12000 também passa nesse teste e vira B — o A nunca acontece. Sempre da maior faixa para a menor.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "ordenar",
@@ -4088,7 +4097,8 @@ const MODULOS = [
        ")"
       ],
       "indice_errado": 3,
-      "explicacao": "Comparação no critério precisa de aspas: \">500\". Sem aspas, o Excel não entende e dá erro."
+      "explicacao": "Comparação no critério precisa de aspas: \">500\". Sem aspas, o Excel não entende e dá erro.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "tokens",
@@ -4112,7 +4122,8 @@ const MODULOS = [
       "tipo": "vf",
       "afirmacao": "=CONT.SE(B2:B5;\"sul\") com s minúsculo retorna 0, porque o critério diferencia maiúsculas.",
       "resposta": false,
-      "explicacao": "CONT.SE NÃO diferencia maiúsculas de minúsculas: \"sul\", \"SUL\" e \"Sul\" contam igual."
+      "explicacao": "CONT.SE NÃO diferencia maiúsculas de minúsculas: \"sul\", \"SUL\" e \"Sul\" contam igual.",
+      "mostrar_planilha": true
      }
     ]
    },
@@ -4211,7 +4222,8 @@ const MODULOS = [
        ")"
       ],
       "indice_errado": 1,
-      "explicacao": "Os intervalos estão trocados: está testando \"Sul\" na coluna de VALORES. Testa-se em B (Região) e soma-se em C (Valor)."
+      "explicacao": "Os intervalos estão trocados: está testando \"Sul\" na coluna de VALORES. Testa-se em B (Região) e soma-se em C (Valor).",
+      "mostrar_planilha": true
      },
      {
       "tipo": "tokens",
@@ -4464,7 +4476,8 @@ const MODULOS = [
        ")"
       ],
       "indice_errado": 1,
-      "explicacao": "O PRIMEIRO argumento do SOMASES é o intervalo da SOMA (C2:C5). Aqui a estrutura está no formato do SOMASE — o erro clássico."
+      "explicacao": "O PRIMEIRO argumento do SOMASES é o intervalo da SOMA (C2:C5). Aqui a estrutura está no formato do SOMASE — o erro clássico.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "tokens",
@@ -4860,7 +4873,8 @@ const MODULOS = [
        ";FALSO)"
       ],
       "indice_errado": 3,
-      "explicacao": "A matriz B2:C4 começa na coluna Produto — o PROCV procura \"ME-03\" entre os NOMES e não acha. A matriz deve começar na coluna do código: A2:C4."
+      "explicacao": "A matriz B2:C4 começa na coluna Produto — o PROCV procura \"ME-03\" entre os NOMES e não acha. A matriz deve começar na coluna do código: A2:C4.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "escolha",
@@ -5369,13 +5383,15 @@ const MODULOS = [
        "A3"
       ],
       "indice_errado": 1,
-      "explicacao": "Texto fixo sem aspas → #NOME?. Correto: =\"Sr. \"&A3."
+      "explicacao": "Texto fixo sem aspas → #NOME?. Correto: =\"Sr. \"&A3.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "vf",
       "afirmacao": "=CONCAT(A2;\" \";B2) e =A2&\" \"&B2 produzem exatamente o mesmo resultado.",
       "resposta": true,
-      "explicacao": "Escolha o que preferir; o & costuma vencer por ser mais curto de digitar."
+      "explicacao": "Escolha o que preferir; o & costuma vencer por ser mais curto de digitar.",
+      "mostrar_planilha": true
      }
     ]
    },
@@ -5814,7 +5830,7 @@ const MODULOS = [
      },
      {
       "tipo": "escolha",
-      "pergunta": "Um relatório precisa da frase \"Relatório de março\" gerada a partir da data em A1. Qual fórmula?",
+      "pergunta": "Um relatório precisa da frase \"Relatório de março\" gerada a partir de uma data. Qual fórmula?",
       "opcoes": [
        "=\"Relatório de \"&TEXTO(A1;\"mmmm\")",
        "=\"Relatório de \"&A1",
@@ -6390,7 +6406,8 @@ const MODULOS = [
        ";\"Y\")"
       ],
       "indice_errado": 1,
-      "explicacao": "Ordem invertida: o INÍCIO (nascimento, B2) vem primeiro, o fim (HOJE) depois. Começar do futuro dá #NÚM!."
+      "explicacao": "Ordem invertida: o INÍCIO (nascimento, B2) vem primeiro, o fim (HOJE) depois. Começar do futuro dá #NÚM!.",
+      "mostrar_planilha": true
      },
      {
       "tipo": "vf",
@@ -6634,7 +6651,8 @@ const MODULOS = [
        ")"
       ],
       "indice_errado": 1,
-      "explicacao": "Argumentos invertidos: a FÓRMULA vem primeiro, o plano B depois. Assim como está, mostraria sempre \"Não cadastrado\"."
+      "explicacao": "Argumentos invertidos: a FÓRMULA vem primeiro, o plano B depois. Assim como está, mostraria sempre \"Não cadastrado\".",
+      "mostrar_planilha": true
      },
      {
       "tipo": "vf",
@@ -6936,6 +6954,16 @@ function prepareExercise(ex) {
   return merged;
 }
 
+// Monta a REVISÃO do módulo: sorteia exercícios das lições, dando preferência
+// aos que exigem produzir (montar/digitar/achar erro) em vez de só reconhecer.
+function montarRevisao(mod) {
+  const banco = [];
+  mod.licoes.forEach((l) => l.exercicios.forEach((ex) => banco.push({ ...ex, _planilha: l.planilha })));
+  const prioridade = (t) => (["tokens", "digitar", "achar_erro", "ordenar"].includes(t) ? 0 : 1);
+  const escolhidos = shuffle(banco).sort((a, b) => prioridade(a.tipo) - prioridade(b.tipo)).slice(0, 12);
+  return { id: `${mod.id}-revisao`, titulo: "Revisão do módulo", revisao: true, exercicios: shuffle(escolhidos) };
+}
+
 // ---------- Barra de fórmulas com lacunas (exercício tokens) ----------
 function FormulaBar({ molde, picked, state }) {
   const partes = molde.split("___");
@@ -7076,13 +7104,20 @@ function RibbonBtn({ icone, rotulo, alvo, menu, clicavel, selecionado, feedback,
 function Ribbon({ guia, grupos = [], clicavel, selecionado, onSelecionar, feedback }) {
   const tabRef = useRef(null);
   const alvoRef = useRef(null);
+  const tabsBox = useRef(null);
+  const btnsBox = useRef(null);
   useEffect(() => {
-    // garante que a guia ativa e o botão-alvo estejam visíveis
-    if (tabRef.current) tabRef.current.scrollIntoView({ inline: "center", block: "nearest" });
-    if (alvoRef.current) alvoRef.current.scrollIntoView({ inline: "center", block: "nearest" });
+    // centraliza a guia ativa e o botão-alvo DENTRO da faixa.
+    // (scrollIntoView rolaria também a página inteira para o lado, desalinhando a tela)
+    const centralizar = (caixa, el) => {
+      if (!caixa || !el) return;
+      caixa.scrollLeft = Math.max(0, el.offsetLeft - (caixa.clientWidth - el.offsetWidth) / 2);
+    };
+    centralizar(tabsBox.current, tabRef.current);
+    centralizar(btnsBox.current, alvoRef.current && alvoRef.current.parentElement);
   }, [guia]);
   return (
-    <div style={{ margin: "16px 0", border: `1px solid ${C.line}`, borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 10px rgba(11,59,102,.07)" }}>
+    <div style={{ margin: "16px 0", border: `1px solid ${C.line}`, borderRadius: 12, overflow: "hidden", maxWidth: "100%", boxShadow: "0 2px 10px rgba(11,59,102,.07)" }}>
       {/* Barra de título do Excel */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.green, padding: "7px 12px" }}>
         <span style={{ width: 18, height: 18, borderRadius: 4, background: "#fff", color: C.green, fontFamily: font.ui, fontWeight: 900, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>X</span>
@@ -7092,7 +7127,7 @@ function Ribbon({ guia, grupos = [], clicavel, selecionado, onSelecionar, feedba
         </span>
       </div>
       {/* Guias */}
-      <div style={{ display: "flex", gap: 2, background: "#F0F3F1", padding: "6px 8px 0", overflowX: "auto", scrollbarWidth: "none" }}>
+      <div ref={tabsBox} style={{ display: "flex", gap: 2, background: "#F0F3F1", padding: "6px 8px 0", overflowX: "auto", scrollbarWidth: "none" }}>
         {GUIAS.map((g) => {
           const ativa = g === guia;
           return (
@@ -7103,7 +7138,7 @@ function Ribbon({ guia, grupos = [], clicavel, selecionado, onSelecionar, feedba
         })}
       </div>
       {/* Grupos de botões, com separadores como no Excel */}
-      <div style={{ background: "#fff", display: "flex", alignItems: "stretch", overflowX: "auto", padding: "14px 8px 0", scrollbarWidth: "none" }}>
+      <div ref={btnsBox} style={{ background: "#fff", display: "flex", alignItems: "stretch", overflowX: "auto", padding: "14px 8px 0", scrollbarWidth: "none" }}>
         {grupos.map((gr, gi) => (
           <div key={gr.nome} style={{ display: "flex", flexDirection: "column", borderRight: gi < grupos.length - 1 ? `1px solid ${C.line}` : "none", padding: "0 8px", flexShrink: 0 }}>
             <div style={{ display: "flex", gap: 4, alignItems: "flex-start" }}>
@@ -7138,6 +7173,10 @@ const TALLY_ID = "44ZaRX";
 
 // Formulário de e-mail (lista de novidades). Mesmo esquema: cole o ID do 2º formulário.
 const TALLY_EMAIL_ID = "lbpajk";
+
+// Endereço público do app e perfil (usados no card compartilhável)
+const LINK_APP = "atalho-pwa.vercel.app";
+const PERFIL_IG = "@aprendanoatalho";
 // Só convida depois que a pessoa concluiu esta quantidade de lições (já sentiu valor).
 const PEDIR_EMAIL_APOS = 2;
 
@@ -7206,6 +7245,11 @@ export default function App() {
   const [xpTotal, setXpTotal] = useState(() => carregar().xpTotal || 0);
   const [streak, setStreak] = useState(() => carregar().streak || 0);
   const [emailStatus, setEmailStatus] = useState(() => carregar().email || null); // "feito" | "depois" | null
+  const [notas, setNotas] = useState(() => carregar().notas || {});   // melhor aproveitamento por lição
+  const [licaoObj, setLicaoObj] = useState(null);                      // lição atual (normal ou revisão)
+  const [ultimaLicao, setUltimaLicao] = useState(null);                // só na sessão: volta a lista nela
+  const [notaFinal, setNotaFinal] = useState(0);
+  const [copiado, setCopiado] = useState(false);
   const [exs, setExs] = useState([]);
   const [idx, setIdx] = useState(0);
   const [vidas, setVidas] = useState(5);
@@ -7227,12 +7271,19 @@ export default function App() {
 
   const modulo = MODULOS[modIdx];
   const licoes = modulo.licoes;
-  const licao = licoes[licaoIdx];
+  const licao = licaoObj || licoes[licaoIdx];
+  const planilhaAtual = (ex0 => (ex0 && ex0._planilha) || licao.planilha)(exs[idx]);
+  const douradasDoModulo = (mod) => mod.licoes.filter((l) => notas[l.id] === 100).length;
   const ex = exs[idx];
 
   // Ao trocar de tela ou de exercício, volta ao topo:
   // sem isso a página herda a rolagem anterior e abre "no meio"
   useEffect(() => {
+    if (tela === "home" && ultimaLicao) {
+      // volta a lista na altura da lição recém-concluída (e não no topo)
+      const el = document.getElementById("licao-" + ultimaLicao);
+      if (el) { el.scrollIntoView({ block: "center", inline: "nearest" }); return; }
+    }
     window.scrollTo(0, 0);
     if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
   }, [tela, idx, licaoIdx, modIdx]);
@@ -7240,12 +7291,16 @@ export default function App() {
   const resetEx = () => { setSel(null); setDigitado(""); setCelula(null); setOrdem([]); setLigacoes({}); setEsqSel(null); setFlash(null); setPicked([]); setUsados([]); setFeedback(null); };
 
   const iniciarLicao = (mi, li) => {
-    setModIdx(mi); setLicaoIdx(li);
-    setExs(MODULOS[mi].licoes[li].exercicios.map(prepareExercise)); // variantes + shuffle a cada início
-    track("licao_iniciada", { licao: MODULOS[mi].licoes[li].id, modulo: MODULOS[mi].titulo });
+    const mod = MODULOS[mi];
+    // li igual ao número de lições = revisão do módulo (montada na hora)
+    const l = li < mod.licoes.length ? mod.licoes[li] : montarRevisao(mod);
+    setModIdx(mi); setLicaoIdx(li); setLicaoObj(l);
+    setExs(l.exercicios.map(prepareExercise)); // variantes + embaralhamento a cada início
+    track("licao_iniciada", { licao: l.id, modulo: mod.titulo });
     setIdx(0); setXp(0); setErros(0);
+    setVidas(5);              // vidas cheias a cada lição — sem bloqueio nesta fase
     resetEx();
-    setTela("teoria");
+    setTela(l.revisao ? "licao" : "teoria");  // revisão não tem teoria
   };
 
   const verificar = () => {
@@ -7279,10 +7334,34 @@ export default function App() {
       let novaStreak = streak;
       if (dadosSalvos.ultimoDia !== hoje) novaStreak = dadosSalvos.ultimoDia === ontem ? streak + 1 : 1;
       setStreak(novaStreak);
-      salvarLocal({ concluidas: novasConcluidas, xpTotal: novoXpTotal, streak: novaStreak, ultimoDia: hoje });
-      track("licao_concluida", { licao: licao.id, erros, xp });
-      setTela("fim");
+      // aproveitamento desta tentativa; guarda sempre o MELHOR resultado
+      const pct = Math.round((exs.length / (exs.length + erros)) * 100);
+      const novasNotas = { ...notas, [licao.id]: Math.max(notas[licao.id] || 0, pct) };
+      setNotas(novasNotas); setNotaFinal(pct);
+      setUltimaLicao(licao.id);
+      salvarLocal({ concluidas: novasConcluidas, xpTotal: novoXpTotal, streak: novaStreak, ultimoDia: hoje, notas: novasNotas });
+      track("licao_concluida", { licao: licao.id, erros, xp, aproveitamento: pct });
+      // módulo inteiro (lições + revisão) concluído?
+      const idsDoModulo = [...modulo.licoes.map((l) => l.id), `${modulo.id}-revisao`];
+      const moduloCompleto = idsDoModulo.every((id) => novasConcluidas.includes(id));
+      const jaEra = idsDoModulo.every((id) => concluidas.includes(id));
+      if (moduloCompleto && !jaEra) {
+        track("modulo_concluido", { modulo: modulo.id });
+        setCopiado(false);
+        setTela("modulo");
+      } else setTela("fim");
     } else { setIdx(idx + 1); resetEx(); }
+  };
+
+  const compartilharModulo = async () => {
+    const douradas = douradasDoModulo(modulo);
+    const texto = `Terminei o módulo "${modulo.titulo}" no Atalho — ${douradas} de ${modulo.licoes.length} lições com 100%! 🎉\n` +
+      `Aprenda Excel de graça, em lições de 3 minutos: ${LINK_APP}\n${PERFIL_IG}`;
+    track("compartilhou_modulo", { modulo: modulo.id });
+    try {
+      if (navigator.share) { await navigator.share({ title: "Atalho — aprenda Excel", text: texto }); return; }
+    } catch (e) { /* cancelou o compartilhamento */ }
+    try { await navigator.clipboard.writeText(texto); setCopiado(true); } catch (e) {}
   };
 
   const tentarPar = (item) => {
@@ -7335,21 +7414,41 @@ export default function App() {
             <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: C.green, textTransform: "uppercase" }}>
               Trilha {mod.trilha} · {mod.trilha === 1 ? 'Iniciante' : 'Intermediário'}
             </div>
-            <div style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 800, color: C.navy, margin: "2px 0 14px" }}>
-              Módulo {mi + 1} · {mod.titulo}
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "2px 0 14px", flexWrap: "wrap" }}>
+              <div style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 800, color: C.navy }}>
+                Módulo {mi + 1} · {mod.titulo}
+              </div>
+              {douradasDoModulo(mod) > 0 && (
+                <span style={{ fontFamily: font.ui, fontSize: 12.5, fontWeight: 800, color: C.gold }}>
+                  ★ {douradasDoModulo(mod)} de {mod.licoes.length} douradas
+                </span>
+              )}
             </div>
-            {mod.licoes.map((l, li) => {
+            {[...mod.licoes, { id: `${mod.id}-revisao`, titulo: "Revisão do módulo", revisao: true }].map((l, li) => {
               const done = concluidas.includes(l.id);
+              const nota = notas[l.id];
+              const ouro = nota === 100;
+              const corBorda = ouro ? C.gold : done ? C.green : C.line;
               return (
-                <button key={l.id} onClick={() => iniciarLicao(mi, li)}
-                  style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: done ? "#E9F4EE" : "#fff", border: `2px solid ${done ? C.green : C.line}`, borderBottom: `4px solid ${done ? C.green : C.line}`, borderRadius: 14, padding: "14px 16px", marginBottom: 10, cursor: "pointer" }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 19, background: done ? C.green : C.mist, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {done ? <Check size={20} color="#fff" /> : <BookOpen size={18} color={C.navy} />}
+                <button key={l.id} id={"licao-" + l.id} onClick={() => iniciarLicao(mi, li)}
+                  style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: ouro ? "#FDF6E8" : done ? "#E9F4EE" : "#fff", border: `2px solid ${corBorda}`, borderBottom: `4px solid ${corBorda}`, borderRadius: 14, padding: "14px 16px", marginBottom: 10, cursor: "pointer" }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 19, background: ouro ? C.gold : done ? C.green : C.mist, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    {ouro ? <Zap size={19} color="#fff" fill="#fff" /> : done ? <Check size={20} color="#fff" /> : l.revisao ? <Flame size={18} color={C.navy} /> : <BookOpen size={18} color={C.navy} />}
                   </div>
-                  <div>
-                    <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 800, color: C.navy }}>Lição {li + 1} · {l.titulo}</div>
-                    <div style={{ fontFamily: font.ui, fontSize: 12.5, color: "#5A6660" }}>Teoria + {l.exercicios.length} exercícios{done ? " · concluída — revisar embaralha tudo de novo" : ""}</div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 800, color: C.navy }}>
+                      {l.revisao ? "Revisão do módulo" : `Lição ${li + 1} · ${l.titulo}`}
+                    </div>
+                    <div style={{ fontFamily: font.ui, fontSize: 12.5, color: "#5A6660" }}>
+                      {l.revisao ? "12 exercícios sorteados de todo o módulo" : `Teoria + ${l.exercicios.length} exercícios`}
+                      {nota !== undefined ? ` · melhor: ${nota}%` : ""}
+                    </div>
                   </div>
+                  {nota !== undefined && (
+                    <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 900, color: ouro ? "#B07D18" : C.greenDark, flexShrink: 0 }}>
+                      {ouro ? "100%" : `${nota}%`}
+                    </div>
+                  )}
                 </button>
               );
             })}
@@ -7398,10 +7497,56 @@ export default function App() {
     );
   }
 
+  /* ---------- MÓDULO CONCLUÍDO (card compartilhável) ---------- */
+  if (tela === "modulo") {
+    const douradas = douradasDoModulo(modulo);
+    const totalLicoes = modulo.licoes.length;
+    return (
+      <Shell>
+        <div style={{ background: C.mist, border: `3px solid ${C.green}`, borderRadius: 22, padding: "26px 20px 18px", textAlign: "center", marginTop: 8 }}>
+          <div style={{ fontSize: 46, lineHeight: 1 }}>🏆</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 800, letterSpacing: 1.4, color: C.green, textTransform: "uppercase", marginTop: 10 }}>
+            Módulo concluído
+          </div>
+          <div style={{ fontFamily: font.ui, fontSize: 25, fontWeight: 900, color: C.navy, margin: "4px 0 14px", lineHeight: 1.2 }}>
+            {modulo.titulo}
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }}>
+            <Stat label="Lições" value={totalLicoes} color={C.green} />
+            <Stat label="Douradas" value={douradas} color={C.gold} />
+            <Stat label="XP total" value={xpTotal} color={C.navy} />
+          </div>
+          {/* assinatura: fica no print e leva a pessoa até a gente */}
+          <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+              <span style={{ width: 24, height: 24, borderRadius: 7, background: C.green, borderBottom: `3px solid ${C.greenDark}`, color: "#fff", fontFamily: font.ui, fontWeight: 900, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>a.</span>
+              <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 900, color: C.navy }}>atalho<span style={{ color: C.green }}>.</span></span>
+            </div>
+            <div style={{ fontFamily: font.ui, fontSize: 11.5, color: "#5A6660", marginTop: 5, whiteSpace: "nowrap" }}>{PERFIL_IG} · {LINK_APP}</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 10 }}>
+          <Btn full onClick={compartilharModulo}>Compartilhar conquista</Btn>
+          <Btn full color={C.navy} dark="#082A4A" onClick={() => setTela("home")}>Voltar às lições</Btn>
+        </div>
+        {copiado && (
+          <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: C.greenDark, textAlign: "center", marginTop: 10 }}>
+            ✓ Texto copiado — é só colar onde quiser
+          </div>
+        )}
+        <div style={{ fontFamily: font.ui, fontSize: 12.5, color: "#8A948F", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
+          Dica: um print desta tela já leva o nome e o link do app junto.
+        </div>
+      </Shell>
+    );
+  }
+
   /* ---------- FIM ---------- */
   if (tela === "fim") {
     const total = exs.length;
-    const acc = Math.round((total / (total + erros)) * 100);
+    const acc = notaFinal || Math.round((total / (total + erros)) * 100);
+    const melhor = notas[licao.id] || acc;
     return (
       <Shell>
         <div style={{ textAlign: "center", paddingTop: 40 }}>
@@ -7411,6 +7556,11 @@ export default function App() {
             <Stat label="XP" value={`+${xp}`} color={C.gold} />
             <Stat label="Precisão" value={`${acc}%`} color={C.green} />
             <Stat label="Vidas" value={vidas} color={C.red} />
+          </div>
+          <div style={{ fontFamily: font.ui, fontSize: 14, color: acc === 100 ? "#B07D18" : "#5A6660", fontWeight: 700, marginBottom: 16, lineHeight: 1.5 }}>
+            {acc === 100
+              ? "⭐ Selo dourado conquistado nesta lição!"
+              : `Melhor até agora: ${melhor}%. Refaça e chegue aos 100% para ganhar o selo dourado.`}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <Btn full onClick={() => iniciarLicao(modIdx, licaoIdx)}>Refazer (embaralha tudo)</Btn>
@@ -7473,10 +7623,10 @@ export default function App() {
         <div style={{ fontFamily: font.ui, fontSize: 15.5, color: C.ink, marginTop: 8, lineHeight: 1.5, background: C.mist, borderRadius: 12, padding: 14 }}>{ex.afirmacao}</div>
       )}
 
-      {ex.mostrar_planilha && ex.tipo !== "clicar_celula" && <ExcelFrame linhas={licao.planilha.linhas} />}
+      {ex.mostrar_planilha && ex.tipo !== "clicar_celula" && planilhaAtual && <ExcelFrame linhas={planilhaAtual.linhas} />}
 
       {ex.tipo === "clicar_celula" && (
-        <ExcelFrame linhas={licao.planilha.linhas} ativa={celula} clicavel={!feedback} selecionada={celula} onCelula={setCelula} feedbackCel={feedback} />
+        <ExcelFrame linhas={planilhaAtual.linhas} ativa={celula} clicavel={!feedback} selecionada={celula} onCelula={setCelula} feedbackCel={feedback} />
       )}
 
       {/* CLICAR_RIBBON: encontrar o botão certo na Faixa de Opções */}
@@ -7632,6 +7782,16 @@ export default function App() {
                 Resposta: {ex.alvo}
               </div>
             )}
+            {feedback === "wrong" && ex.tipo === "ordenar" && (
+              <div style={{ marginTop: 8, background: "#fff", border: `1px solid ${C.line}`, borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ fontFamily: font.ui, fontSize: 12.5, fontWeight: 800, color: C.redDark, marginBottom: 6 }}>Ordem correta:</div>
+                {ex.passos.map((p, i) => (
+                  <div key={i} style={{ fontFamily: font.ui, fontSize: 13.5, color: C.ink, lineHeight: 1.5 }}>
+                    <b style={{ color: C.green }}>{i + 1}.</b> {p}
+                  </div>
+                ))}
+              </div>
+            )}
             {feedback === "wrong" && ex.tipo === "tokens" && (
               <div style={{ fontFamily: font.mono, fontSize: 13.5, fontWeight: 700, color: C.redDark, marginTop: 6 }}>
                 Correto: {ex.molde.split("___").reduce((acc, p, i) => acc + p + (ex.resposta[i] || ""), "")}
@@ -7675,7 +7835,7 @@ function Stat({ label, value, color }) {
 
 function Shell({ children }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#FFFFFF", display: "flex", justifyContent: "center" }}>
+    <div style={{ minHeight: "100vh", background: "#FFFFFF", display: "flex", justifyContent: "center", overflowX: "hidden" }}>
       <div style={{ width: "100%", maxWidth: 480, padding: "24px 20px 40px" }}>{children}</div>
     </div>
   );
