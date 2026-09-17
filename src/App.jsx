@@ -6954,6 +6954,78 @@ function prepareExercise(ex) {
   return merged;
 }
 
+// Desenha o card de conquista como IMAGEM (1080x1350) para compartilhar/postar.
+// Canvas puro: nada de biblioteca externa, funciona offline.
+function gerarCardModulo({ titulo, licoes, douradas, xp }) {
+  const L = 1080, A = 1350;
+  const cv = document.createElement("canvas");
+  cv.width = L; cv.height = A;
+  const c = cv.getContext("2d");
+  const F = (peso, tam) => `${peso} ${tam}px "Segoe UI", system-ui, -apple-system, Roboto, sans-serif`;
+  const centro = (txt, y, fonte, cor) => { c.font = fonte; c.fillStyle = cor; c.textAlign = "center"; c.fillText(txt, L / 2, y); };
+  const caixa = (x, y, w, h, r, fill, borda, larg) => {
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, r);
+    else { c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); }
+    if (fill) { c.fillStyle = fill; c.fill(); }
+    if (borda) { c.strokeStyle = borda; c.lineWidth = larg || 4; c.stroke(); }
+  };
+
+  // fundo com grade de planilha
+  c.fillStyle = "#F2F5F3"; c.fillRect(0, 0, L, A);
+  c.strokeStyle = "#DDE5E0"; c.lineWidth = 2;
+  for (let x = 0; x <= L; x += 120) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, A); c.stroke(); }
+  for (let y = 0; y <= A; y += 120) { c.beginPath(); c.moveTo(0, y); c.lineTo(L, y); c.stroke(); }
+
+  // troféu
+  centro("🏆", 300, F(400, 160), "#111");
+
+  centro("MÓDULO CONCLUÍDO", 400, F(800, 42), "#107C41");
+
+  // título (quebra em duas linhas se precisar)
+  c.font = F(900, 74); c.textAlign = "center";
+  const palavras = String(titulo).split(" ");
+  const linhas = []; let atual = "";
+  palavras.forEach((p) => {
+    const teste = atual ? atual + " " + p : p;
+    if (c.measureText(teste).width > L - 160 && atual) { linhas.push(atual); atual = p; } else atual = teste;
+  });
+  if (atual) linhas.push(atual);
+  linhas.slice(0, 2).forEach((ln, i) => centro(ln, 505 + i * 84, F(900, 74), "#0B3B66"));
+  const yBase = 505 + (linhas.length > 1 ? 84 : 0);
+
+  // três indicadores
+  const dados = [["LIÇÕES", String(licoes), "#107C41"]];
+  if (douradas > 0) dados.push(["DOURADAS", String(douradas), "#E8A13C"]);
+  dados.push(["XP", String(xp), "#0B3B66"]);
+  const larg = dados.length === 3 ? 280 : 320, gap = 26, y0 = yBase + 120;
+  const x0 = (L - (larg * dados.length + gap * (dados.length - 1))) / 2;
+  dados.forEach(([rot, val, cor], i) => {
+    const x = x0 + i * (larg + gap);
+    caixa(x, y0, larg, 190, 24, "#FFFFFF", cor, 5);
+    caixa(x, y0, larg, 62, 24, cor);
+    c.fillStyle = "#FFFFFF"; c.font = F(800, 30); c.textAlign = "center";
+    c.fillText(rot, x + larg / 2, y0 + 42);
+    c.fillStyle = "#0B3B66"; c.font = F(900, 76);
+    c.fillText(val, x + larg / 2, y0 + 155);
+  });
+
+  // assinatura: tecla + nome + @ + link
+  const yAss = y0 + 400;
+  const tx = L / 2 - 210;
+  caixa(tx, yAss - 52, 84, 84, 22, "#0B5C30"); caixa(tx, yAss - 58, 84, 84, 22, "#107C41");
+  c.fillStyle = "#FFFFFF"; c.font = F(900, 46); c.textAlign = "center";
+  c.fillText("a.", tx + 42, yAss - 6);
+  c.textAlign = "left"; c.font = F(900, 60); c.fillStyle = "#0B3B66";
+  c.fillText("atalho", tx + 108, yAss);
+  const wNome = c.measureText("atalho").width;
+  c.fillStyle = "#107C41"; c.fillText(".", tx + 108 + wNome, yAss);
+  centro(`${PERFIL_IG} · ${LINK_APP}`, yAss + 66, F(600, 36), "#5A6660");
+  centro("aprenda Excel em lições de 3 minutos", yAss + 132, F(700, 42), "#1A1D21");
+
+  return new Promise((r) => cv.toBlob(r, "image/png"));
+}
+
 // Monta a REVISÃO do módulo: sorteia exercícios das lições, dando preferência
 // aos que exigem produzir (montar/digitar/achar erro) em vez de só reconhecer.
 function montarRevisao(mod) {
@@ -7236,7 +7308,7 @@ function LinkFeedback({ texto, onClick, centro }) {
 }
 
 export default function App() {
-  const [tela, setTela] = useState("home"); // home | teoria | licao | fim
+  const [tela, setTela] = useState("modulo"); // home | teoria | licao | fim
   const [licaoIdx, setLicaoIdx] = useState(0);
   // ---- Persistência local (Fase 0: sem backend) ----
   const carregar = () => { try { return JSON.parse(localStorage.getItem("atalho")) || {}; } catch { return {}; } };
@@ -7355,13 +7427,40 @@ export default function App() {
 
   const compartilharModulo = async () => {
     const douradas = douradasDoModulo(modulo);
-    const texto = `Terminei o módulo "${modulo.titulo}" no Atalho — ${douradas} de ${modulo.licoes.length} lições com 100%! 🎉\n` +
-      `Aprenda Excel de graça, em lições de 3 minutos: ${LINK_APP}\n${PERFIL_IG}`;
-    track("compartilhou_modulo", { modulo: modulo.id });
+    const total = modulo.licoes.length;
+    // só cita o 100% quando há o que comemorar — "0 de 5" desanima na hora errada
+    const conquista = douradas > 0
+      ? `Terminei o módulo "${modulo.titulo}" no Atalho — ${douradas} de ${total} lições com 100%! 🎉`
+      : `Terminei o módulo "${modulo.titulo}" no Atalho! 🎉`;
+    const texto = `${conquista}\nAprenda Excel de graça, em lições de 3 minutos: ${LINK_APP}\n${PERFIL_IG}`;
+    track("compartilhou_modulo", { modulo: modulo.id, douradas });
+
+    // 1ª opção: compartilhar a IMAGEM do card
+    try {
+      const blob = await gerarCardModulo({ titulo: modulo.titulo, licoes: total, douradas, xp: xpTotal });
+      if (blob) {
+        const arquivo = new File([blob], "atalho-conquista.png", { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+          await navigator.share({ files: [arquivo], text: texto });
+          return;
+        }
+        // 2ª opção: baixar a imagem (computador ou celular sem compartilhamento de arquivo)
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "atalho-conquista.png";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        try { await navigator.clipboard.writeText(texto); } catch (e) {}
+        setCopiado("imagem");
+        return;
+      }
+    } catch (e) { /* cancelou ou o navegador não deixou; cai no texto */ }
+
+    // 3ª opção: só o texto
     try {
       if (navigator.share) { await navigator.share({ title: "Atalho — aprenda Excel", text: texto }); return; }
-    } catch (e) { /* cancelou o compartilhamento */ }
-    try { await navigator.clipboard.writeText(texto); setCopiado(true); } catch (e) {}
+    } catch (e) { return; }
+    try { await navigator.clipboard.writeText(texto); setCopiado("texto"); } catch (e) {}
   };
 
   const tentarPar = (item) => {
@@ -7513,7 +7612,7 @@ export default function App() {
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }}>
             <Stat label="Lições" value={totalLicoes} color={C.green} />
-            <Stat label="Douradas" value={douradas} color={C.gold} />
+            {douradas > 0 && <Stat label="Douradas" value={douradas} color={C.gold} />}
             <Stat label="XP total" value={xpTotal} color={C.navy} />
           </div>
           {/* assinatura: fica no print e leva a pessoa até a gente */}
@@ -7532,7 +7631,7 @@ export default function App() {
         </div>
         {copiado && (
           <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: C.greenDark, textAlign: "center", marginTop: 10 }}>
-            ✓ Texto copiado — é só colar onde quiser
+            {copiado === "imagem" ? "✓ Imagem salva no aparelho e legenda copiada" : "✓ Texto copiado — é só colar onde quiser"}
           </div>
         )}
         <div style={{ fontFamily: font.ui, fontSize: 12.5, color: "#8A948F", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
