@@ -6956,7 +6956,7 @@ function prepareExercise(ex) {
 
 // Desenha o card de conquista como IMAGEM (1080x1350) para compartilhar/postar.
 // Canvas puro: nada de biblioteca externa, funciona offline.
-function gerarCardModulo({ titulo, licoes, douradas, xp }) {
+function gerarCardModulo({ titulo, acertos, total, xp }) {
   const L = 1080, A = 1350;
   const cv = document.createElement("canvas");
   cv.width = L; cv.height = A;
@@ -6980,7 +6980,7 @@ function gerarCardModulo({ titulo, licoes, douradas, xp }) {
   // troféu
   centro("🏆", 300, F(400, 160), "#111");
 
-  centro("MÓDULO CONCLUÍDO", 400, F(800, 42), "#107C41");
+  centro("DESAFIO SUPERADO", 400, F(800, 42), "#107C41");
 
   // título (quebra em duas linhas se precisar)
   c.font = F(900, 74); c.textAlign = "center";
@@ -6995,9 +6995,7 @@ function gerarCardModulo({ titulo, licoes, douradas, xp }) {
   const yBase = 505 + (linhas.length > 1 ? 84 : 0);
 
   // três indicadores
-  const dados = [["LIÇÕES", String(licoes), "#107C41"]];
-  if (douradas > 0) dados.push(["DOURADAS", String(douradas), "#E8A13C"]);
-  dados.push(["XP", String(xp), "#0B3B66"]);
+  const dados = [["ACERTOS", `${acertos}/${total}`, "#107C41"], ["XP", String(xp), "#0B3B66"]];
   const larg = dados.length === 3 ? 280 : 320, gap = 26, y0 = yBase + 120;
   const x0 = (L - (larg * dados.length + gap * (dados.length - 1))) / 2;
   dados.forEach(([rot, val, cor], i) => {
@@ -7021,7 +7019,8 @@ function gerarCardModulo({ titulo, licoes, douradas, xp }) {
   const wNome = c.measureText("atalho").width;
   c.fillStyle = "#107C41"; c.fillText(".", tx + 108 + wNome, yAss);
   centro(`${PERFIL_IG} · ${LINK_APP}`, yAss + 66, F(600, 36), "#5A6660");
-  centro("aprenda Excel em lições de 3 minutos", yAss + 132, F(700, 42), "#1A1D21");
+  centro("planilha nova a cada tentativa — sem decoreba", yAss + 126, F(700, 34), "#1A1D21");
+  centro("Criado por Guilherme Ortiz", yAss + 186, F(600, 30), "#8A948F");
 
   return new Promise((r) => cv.toBlob(r, "image/png"));
 }
@@ -7382,7 +7381,9 @@ const DESAFIO_MINIMO = 0.75;
 const semAcento = (s) => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "");
 const normTexto = (s) => semAcento(s).trim().replace(/\s+/g, " ").toLowerCase();
 const normFormula = (s) => normTexto(s).replace(/\s+/g, "").replace(/,/g, ";");
-const normAtalho = (s) => normTexto(s).replace(/[\s+\-]/g, "");
+// atalho: o que importa é a tecla — "Crtl", "Ctr", "Control", "Controle" contam como Ctrl
+const normAtalho = (s) => normTexto(s).replace(/[\s+\-]/g, "")
+  .replace(/^(controle|control|crtl|ctrl|ctr|ctl|trl)/, "ctrl").replace(/(shift|shit|shft|sift)/, "shift");
 const normErro = (s) => normTexto(s).replace(/[\s#!?]/g, "");
 function lerNumero(s) {
   let t = String(s).replace(/r\$|\s|%/gi, "");
@@ -7704,6 +7705,7 @@ export default function App() {
   const [licaoObj, setLicaoObj] = useState(null);                      // lição atual (normal ou revisão)
   const [ultimaLicao, setUltimaLicao] = useState(null);                // só na sessão: volta a lista nela
   const [notaFinal, setNotaFinal] = useState(0);
+  const [placar, setPlacar] = useState({ acertos: 0, total: 0 }); // resultado do desafio recém-superado
   const [copiado, setCopiado] = useState(false);
   const [exs, setExs] = useState([]);
   const [idx, setIdx] = useState(0);
@@ -7828,12 +7830,11 @@ export default function App() {
       setUltimaLicao(licao.id);
       salvarLocal({ concluidas: novasConcluidas, xpTotal: novoXpTotal, streak: novaStreak, ultimoDia: hoje, notas: novasNotas });
       track(licao.desafio ? "desafio_concluido" : "licao_concluida", { licao: licao.id, erros, xp, aproveitamento: pct });
-      // módulo inteiro (lições + revisão) concluído?
-      const idsDoModulo = [...modulo.licoes.map((l) => l.id), `${modulo.id}-revisao`];
-      const moduloCompleto = idsDoModulo.every((id) => novasConcluidas.includes(id));
-      const jaEra = idsDoModulo.every((id) => concluidas.includes(id));
-      if (moduloCompleto && !jaEra) {
-        track("modulo_concluido", { modulo: modulo.id });
+      // desafio superado? é a conquista que vale a pena mostrar: nota mínima numa planilha nova
+      const acertos = Math.max(0, exs.length - erros);
+      if (licao.desafio && acertos >= Math.ceil(exs.length * DESAFIO_MINIMO)) {
+        track("desafio_superado", { modulo: modulo.id, acertos, de: exs.length });
+        setPlacar({ acertos, total: exs.length });
         setCopiado(false);
         setTela("modulo");
       } else setTela("fim");
@@ -7841,18 +7842,16 @@ export default function App() {
   };
 
   const compartilharModulo = async () => {
-    const douradas = douradasDoModulo(modulo);
-    const total = modulo.licoes.length;
-    // só cita o 100% quando há o que comemorar — "0 de 5" desanima na hora errada
-    const conquista = douradas > 0
-      ? `Terminei o módulo "${modulo.titulo}" no Atalho — ${douradas} de ${total} lições com 100%! 🎉`
-      : `Terminei o módulo "${modulo.titulo}" no Atalho! 🎉`;
-    const texto = `${conquista}\nAprenda Excel de graça, em lições de 3 minutos: ${LINK_APP}\n${PERFIL_IG}`;
-    track("compartilhou_modulo", { modulo: modulo.id, douradas });
+    const { acertos, total } = placar;
+    const conquista = acertos === total
+      ? `Gabaritei o desafio do módulo "${modulo.titulo}" no Atalho: ${acertos} de ${total} numa planilha que eu nunca tinha visto! 🏆`
+      : `Superei o desafio do módulo "${modulo.titulo}" no Atalho: ${acertos} de ${total} acertos numa planilha que eu nunca tinha visto. 🏆`;
+    const texto = `${conquista}\nDuvido você fazer melhor 😏 Excel de graça, em lições de 3 minutos: ${LINK_APP}\n${PERFIL_IG}`;
+    track("compartilhou_desafio", { modulo: modulo.id, acertos, de: total });
 
     // 1ª opção: compartilhar a IMAGEM do card
     try {
-      const blob = await gerarCardModulo({ titulo: modulo.titulo, licoes: total, douradas, xp: xpTotal });
+      const blob = await gerarCardModulo({ titulo: modulo.titulo, acertos, total, xp: xpTotal });
       if (blob) {
         const arquivo = new File([blob], "atalho-conquista.png", { type: "image/png" });
         if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
@@ -8061,21 +8060,19 @@ export default function App() {
 
   /* ---------- MÓDULO CONCLUÍDO (card compartilhável) ---------- */
   if (tela === "modulo") {
-    const douradas = douradasDoModulo(modulo);
-    const totalLicoes = modulo.licoes.length;
+    const { acertos, total: totalDesafio } = placar;
     return (
       <Shell>
         <div style={{ background: C.mist, border: `3px solid ${C.green}`, borderRadius: 22, padding: "26px 20px 18px", textAlign: "center", marginTop: 8 }}>
           <div style={{ fontSize: 46, lineHeight: 1 }}>🏆</div>
           <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 800, letterSpacing: 1.4, color: C.green, textTransform: "uppercase", marginTop: 10 }}>
-            Módulo concluído
+            Desafio superado
           </div>
           <div style={{ fontFamily: font.ui, fontSize: 25, fontWeight: 900, color: C.navy, margin: "4px 0 14px", lineHeight: 1.2 }}>
             {modulo.titulo}
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }}>
-            <Stat label="Lições" value={totalLicoes} color={C.green} />
-            {douradas > 0 && <Stat label="Douradas" value={douradas} color={C.gold} />}
+            <Stat label="Acertos" value={`${acertos}/${totalDesafio}`} color={C.green} />
             <Stat label="XP total" value={xpTotal} color={C.navy} />
           </div>
           {/* assinatura: fica no print e leva a pessoa até a gente */}
@@ -8085,11 +8082,12 @@ export default function App() {
               <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 900, color: C.navy }}>atalho<span style={{ color: C.green }}>.</span></span>
             </div>
             <div style={{ fontFamily: font.ui, fontSize: 11.5, color: "#5A6660", marginTop: 5, whiteSpace: "nowrap" }}>{PERFIL_IG} · {LINK_APP}</div>
+            <div style={{ fontFamily: font.ui, fontSize: 11, color: "#8A948F", marginTop: 3 }}>Criado por Guilherme Ortiz</div>
           </div>
         </div>
 
         <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 10 }}>
-          <Btn full onClick={compartilharModulo}>Compartilhar conquista</Btn>
+          <Btn full onClick={compartilharModulo}>Desafiar meus amigos</Btn>
           <Btn full color={C.navy} dark="#082A4A" onClick={() => setTela("home")}>Voltar às lições</Btn>
         </div>
         {copiado && (
@@ -8098,7 +8096,9 @@ export default function App() {
           </div>
         )}
         <div style={{ fontFamily: font.ui, fontSize: 12.5, color: "#8A948F", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
-          Dica: um print desta tela já leva o nome e o link do app junto.
+          {acertos === totalDesafio
+            ? "Gabaritou numa planilha que você nunca tinha visto. Isso é Excel aprendido de verdade."
+            : "Você acertou numa planilha que nunca tinha visto — nada de decoreba."}
         </div>
       </Shell>
     );
