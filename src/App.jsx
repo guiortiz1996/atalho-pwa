@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Heart, Check, X, ChevronRight, ChevronLeft, ChevronDown, Flame, Zap, BookOpen, Lock, Bold, Italic, Underline, PaintBucket, Table, Filter, Snowflake, ArrowDownAZ, Search, Sigma, Percent, DollarSign, AppWindow, MapPin, ZoomIn, LayoutGrid, AlignCenter, Type, Brush, Copy, Columns3, WrapText, Maximize } from "lucide-react";
+import { Heart, Check, X, ChevronRight, ChevronLeft, ChevronDown, Flame, Zap, BookOpen, Lock, Trophy, Bold, Italic, Underline, PaintBucket, Table, Filter, Snowflake, ArrowDownAZ, Search, Sigma, Percent, DollarSign, AppWindow, MapPin, ZoomIn, LayoutGrid, AlignCenter, Type, Brush, Copy, Columns3, WrapText, Maximize } from "lucide-react";
 
 /* =====================================================
    ATALHO — Motor de teste v0.4
@@ -7028,6 +7028,388 @@ function gerarCardModulo({ titulo, licoes, douradas, xp }) {
 
 // Monta a REVISÃO do módulo: sorteia exercícios das lições, dando preferência
 // aos que exigem produzir (montar/digitar/achar erro) em vez de só reconhecer.
+// ---------- DESAFIOS DO MÓDULO ----------
+// Cada tentativa gera uma PLANILHA NOVA (dados sorteados) e as respostas são
+// calculadas na hora. Não dá para decorar nem chutar: a maioria das questões
+// é de digitar o resultado ou a fórmula.
+const rInt = (a, b, passo = 1) => a + passo * Math.floor(Math.random() * (Math.floor((b - a) / passo) + 1));
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const amostra = (a, n) => shuffle(a).slice(0, n);
+const unicos = (n, a, b, passo = 1) => { const s = new Set(); while (s.size < n) s.add(rInt(a, b, passo)); return [...s]; };
+const fmtNum = (n) => Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+const fmtBRL = (n) => "R$ " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const DIAS_SEMANA = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const dt = (y, m, d) => new Date(Date.UTC(y, m - 1, d));
+const fmtData = (d) => `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
+const somaDias = (d, n) => new Date(d.getTime() + n * 86400000);
+const util = (d) => d.getUTCDay() !== 0 && d.getUTCDay() !== 6;
+const diaTrabalho = (d, n) => { let x = d, k = 0; while (k < n) { x = somaDias(x, 1); if (util(x)) k++; } return x; };
+const diaTrabalhoTotal = (a, b) => { let k = 0; for (let x = a; x <= b; x = somaDias(x, 1)) if (util(x)) k++; return k; };
+const anosCompletos = (a, b) => { let y = b.getUTCFullYear() - a.getUTCFullYear(); if (b.getUTCMonth() < a.getUTCMonth() || (b.getUTCMonth() === a.getUTCMonth() && b.getUTCDate() < a.getUTCDate())) y--; return y; };
+
+// construtores de exercício (a planilha vai junto em cada um)
+const dig = (pl, pergunta, resposta, explicacao, modo = "texto", extra = {}) => ({
+  tipo: "digitar", _planilha: pl, mostrar_planilha: true, pergunta, modo, explicacao,
+  resposta: modo === "numero" ? Number(resposta) : String(resposta),
+  respostaTexto: modo === "numero" ? fmtNum(resposta) : String(resposta),
+  ...(modo === "atalho" ? { mostrar_planilha: false } : {}), ...extra,
+});
+const esc = (pl, pergunta, certa, erradas, explicacao, mostrar = true) => ({ tipo: "escolha", _planilha: pl, mostrar_planilha: mostrar, pergunta, opcoes: [certa, ...erradas], resposta: certa, explicacao });
+const tok = (pl, pergunta, molde, resposta, distratores, explicacao) => ({ tipo: "tokens", _planilha: pl, mostrar_planilha: true, pergunta, molde, resposta, banco: [...resposta, ...distratores], explicacao });
+const erro = (pl, pergunta, tokens, indice_errado, explicacao, mostrar = false) => ({ tipo: "achar_erro", _planilha: pl, mostrar_planilha: mostrar, pergunta, tokens, indice_errado, explicacao });
+const cel = (pl, pergunta, alvo, explicacao) => ({ tipo: "clicar_celula", _planilha: pl, pergunta, alvo, explicacao });
+const ord = (pl, pergunta, passos, explicacao) => ({ tipo: "ordenar", _planilha: pl, mostrar_planilha: false, pergunta, passos, explicacao });
+
+const DESAFIOS = {
+  /* M1 · Primeiros passos — pet shop */
+  "t1-m1": () => {
+    const base = [["Ração 10kg", "Alimento"], ["Areia 4kg", "Higiene"], ["Coleira", "Acessório"], ["Petisco", "Alimento"], ["Shampoo", "Higiene"], ["Bolinha", "Acessório"], ["Caminha", "Acessório"], ["Tapete", "Higiene"]];
+    const itens = amostra(base, 5);
+    const qtd = unicos(5, 3, 60);
+    const val = itens.map(() => fmtData(dt(2027, rInt(1, 12), rInt(1, 28))));
+    const linhas = [["Produto", "Categoria", "Qtde", "Validade"], ...itens.map((it, i) => [it[0], it[1], qtd[i], val[i]])];
+    const pl = { linhas };
+    const [a, b, c] = amostra([0, 1, 2, 3, 4], 3); const ra = a + 2, rb = b + 2, rc = c + 2;
+    const tipos = [["B", "Texto"], ["C", "Número"], ["D", "Data"]]; const [colT, tipoT] = pick(tipos);
+    const atalhos = amostra([
+      ["Você apagou a célula A" + ra + " sem querer. Qual atalho desfaz isso?", "Ctrl+Z", "Ctrl+Z desfaz a última ação — e dá para apertar várias vezes."],
+      ["Você desfez uma alteração, mas se arrependeu. Qual atalho REFAZ?", "Ctrl+Y", "Ctrl+Y refaz o que o Ctrl+Z desfez."],
+      ["Qual atalho SALVA a planilha no Excel em português?", "Ctrl+B", "No Excel em português, Ctrl+B é salvar (de \"gravar\"). Negrito é Ctrl+N."],
+    ], 2);
+    const tabOuEnter = pick(["Tab", "Enter"]);
+    const colIni = pick(["A", "B", "C"]);
+    const prox = tabOuEnter === "Tab" ? String.fromCharCode(colIni.charCodeAt(0) + 1) + ra : colIni + (ra + 1);
+    return [
+      cel(pl, `Toque na célula com a quantidade de ${itens[a][0]}.`, `C${ra}`, `${itens[a][0]} está na linha ${ra}; a quantidade fica na coluna C. Endereço: C${ra}.`),
+      dig(pl, `Em que célula está escrito "${itens[b][0]}"? (ex.: B4)`, `A${rb}`, `Coluna A (produtos), linha ${rb}: A${rb}.`),
+      dig(pl, `O que está escrito na célula B${rc}?`, itens[c][1], `B${rc} = coluna B (Categoria), linha ${rc}: ${itens[c][1]}.`),
+      esc(pl, `Que tipo de dado está na célula ${colT}${rb}?`, tipoT, ["Texto", "Número", "Data"].filter((t) => t !== tipoT), `A coluna ${colT} guarda ${tipoT === "Texto" ? "textos (alinham à esquerda)" : tipoT === "Número" ? "números (alinham à direita e entram em contas)" : "datas — que por dentro também são números"}.`),
+      dig(pl, `A célula ${colIni}${ra} está ativa. Você digita algo e confirma com ${tabOuEnter}. Qual célula fica ativa depois?`, prox, `${tabOuEnter === "Tab" ? "Tab confirma e anda para a DIREITA" : "Enter confirma e DESCE uma linha"}: ${prox}.`),
+      dig(pl, `Qual tecla edita a célula D${rc} sem apagar o que já está nela?`, "F2", "F2 (ou duplo clique) entra no modo de edição mantendo o conteúdo.", "atalho"),
+      ...atalhos.map(([p, r, e]) => dig(pl, p, r, e, "atalho")),
+    ];
+  },
+
+  /* M2 · Formatação — livraria */
+  "t1-m2": () => {
+    const livros = amostra(["Dom Casmurro", "O Cortiço", "Iracema", "Senhora", "Macunaíma", "Quincas Borba", "A Moreninha"], 4);
+    const precos = unicos(4, 30, 120, 5);
+    const desc = unicos(4, 5, 35, 5);
+    const linhas = [["Livro", "Preço", "Desconto"], ...livros.map((l, i) => [l, precos[i], `${desc[i]}%`])];
+    const pl = { linhas };
+    const r = rInt(2, 5), r2 = rInt(2, 5);
+    const pctNovo = pick([3, 8, 12, 45, 70]);
+    const valorGrande = rInt(1100, 4800, 50);
+    const mult = pick([2, 3, 10]);
+    const [nomeFmt, atalhoFmt] = pick([["negrito", "Ctrl+N"], ["itálico", "Ctrl+I"], ["sublinhado", "Ctrl+S"]]);
+    return [
+      dig(pl, `C${r} mostra ${desc[r - 2]}% (formato Porcentagem). Qual número está guardado de verdade na célula?`, desc[r - 2] / 100, `Porcentagem é só aparência: ${desc[r - 2]}% é, por dentro, ${fmtNum(desc[r - 2] / 100)}.`, "numero"),
+      dig(pl, `Você digita ${fmtNum(pctNovo / 100)} numa célula e aplica o formato Porcentagem. O que ela passa a mostrar?`, `${pctNovo}%`, `${fmtNum(pctNovo / 100)} × 100 = ${pctNovo}%. O valor guardado continua ${fmtNum(pctNovo / 100)}.`, "texto", { aceitar: [`${pctNovo} %`], mostrar_planilha: false }),
+      dig(pl, `Uma célula mostra ${fmtBRL(valorGrande)} (formato Moeda). Qual o resultado de multiplicar essa célula por ${mult}? (só o número)`, valorGrande * mult, `Moeda não muda o valor: ${fmtNum(valorGrande)} × ${mult} = ${fmtNum(valorGrande * mult)}.`, "numero", { mostrar_planilha: false }),
+      dig(pl, `Qual atalho aplica ${nomeFmt} no Excel em português?`, atalhoFmt, "No Excel em português: Ctrl+N negrito, Ctrl+I itálico, Ctrl+S sublinhado (e Ctrl+B salva!).", "atalho"),
+      esc(pl, `A célula B${r2} passou a mostrar ##### depois que você estreitou a coluna. O que aconteceu com o preço de ${livros[r2 - 2]}?`, "Nada: o valor está intacto, só não cabe na coluna", ["Foi apagado", "Virou texto", "A fórmula deu erro"], "##### é só falta de espaço. Duplo clique na divisa da coluna faz o autoajuste."),
+      ord(pl, "Coloque em ordem para transformar este intervalo numa Tabela oficial:", ["Clicar numa célula dos dados", "Página Inicial → Formatar como Tabela", "Escolher um estilo", "Confirmar \"Minha tabela tem cabeçalhos\""], "Com uma célula dos dados selecionada, o Excel detecta o intervalo inteiro; depois é estilo e confirmação do cabeçalho."),
+      esc(pl, "Você quer um título centralizado acima desta tabela. Qual é a opção mais segura?", "Centralizar entre seleção", ["Mesclar as células de Preço iguais", "Mesclar o cabeçalho B1:C1", "Mesclar a tabela inteira"], "Centralizar entre seleção dá o mesmo visual sem os problemas de mesclar (classificar, filtrar, copiar)."),
+    ];
+  },
+
+  /* M3 · Primeiras fórmulas — hortifrúti */
+  "t1-m3": () => {
+    const itens = amostra(["Tomate", "Alface", "Banana", "Laranja", "Batata", "Cebola", "Maçã", "Cenoura"], 5);
+    const preco = unicos(5, 2, 15); const qtd = unicos(5, 2, 30);
+    const frete = itens.map(() => pick([rInt(5, 25), rInt(5, 25), "", "grátis"]));
+    if (frete.every((f) => typeof f === "number")) frete[rInt(0, 4)] = "grátis";
+    if (frete.every((f) => typeof f !== "number")) frete[rInt(0, 4)] = rInt(5, 25);
+    const linhas = [["Item", "Preço", "Qtde", "Frete"], ...itens.map((it, i) => [it, preco[i], qtd[i], frete[i]])];
+    const pl = { linhas };
+    const r = rInt(2, 6), r2 = rInt(2, 6); const i = r - 2, i2 = r2 - 2;
+    const [fn, fnVal, fnExp] = pick([
+      ["MÁXIMO", Math.max(...preco), "o maior preço"],
+      ["MÍNIMO", Math.min(...preco), "o menor preço"],
+      ["MÉDIA", preco.reduce((a, b) => a + b, 0) / 5, "a média dos 5 preços"],
+    ]);
+    const numFrete = frete.filter((f) => typeof f === "number").length;
+    const valFrete = frete.filter((f) => f !== "").length;
+    const bugs = [
+      [`Toque no erro desta fórmula que deveria multiplicar o preço pela quantidade do ${itens[i]}:`, ["=", `B${r}`, "x", `C${r}`], 2, "A letra x não multiplica: o operador é o asterisco *."],
+      ["Toque no erro desta fórmula que deveria somar as quantidades de C2 até C6:", ["=SOMA(", "C2", ";", "C6", ")"], 2, "Para \"de C2 até C6\" o certo são dois pontos (C2:C6). O ; soma só as duas células."],
+      [`Toque no erro desta fórmula que deveria dividir o preço do ${itens[i]} por 2:`, ["=", `B${r}`, "÷", "2"], 2, "Divisão no Excel é a barra /, não o ÷."],
+    ];
+    const [bp, bt, bi, be] = pick(bugs);
+    return [
+      dig(pl, `Digite a fórmula do total de ${itens[i]} (preço × quantidade), usando as células.`, `=B${r}*C${r}`, `Preço em B${r}, quantidade em C${r}: =B${r}*C${r}.`, "formula", { aceitar: [`=C${r}*B${r}`] }),
+      dig(pl, `Quanto dá =B${r2}*C${r2}?`, preco[i2] * qtd[i2], `${preco[i2]} × ${qtd[i2]} = ${preco[i2] * qtd[i2]}.`, "numero"),
+      dig(pl, `Quanto dá =B${r}+C${r}*2?`, preco[i] + qtd[i] * 2, `Multiplicação vem antes: ${qtd[i]}×2 = ${qtd[i] * 2}, depois + ${preco[i]} = ${preco[i] + qtd[i] * 2}.`, "numero"),
+      dig(pl, "Digite a fórmula que soma todas as quantidades (de C2 até C6).", "=SOMA(C2:C6)", "=SOMA(C2:C6): os dois pontos querem dizer \"até\".", "formula", { aceitar: ["=C2+C3+C4+C5+C6"] }),
+      dig(pl, `Quanto dá =${fn}(B2:B6)?`, fnVal, `${fn} devolve ${fnExp}: ${fmtNum(fnVal)}.`, "numero"),
+      dig(pl, "Quanto dá =CONT.NÚM(D2:D6)?", numFrete, `CONT.NÚM conta só as células com NÚMERO na coluna Frete: ${numFrete}. "grátis" é texto e vazio não conta.`, "numero"),
+      dig(pl, "E =CONT.VALORES(D2:D6)?", valFrete, `CONT.VALORES conta tudo que está preenchido (números e textos): ${valFrete}.`, "numero"),
+      erro(pl, bp, bt, bi, be),
+    ];
+  },
+
+  /* M4 · Alça e referências — comissão de vendedores */
+  "t1-m4": () => {
+    const taxa = pick([5, 8, 10, 12, 15]);
+    const nomes = amostra(["Bruna", "Diego", "Fábio", "Helena", "Igor", "Júlia", "Lucas", "Marina"], 4);
+    const vendas = unicos(4, 20, 90).map((v) => v * 100);
+    const linhas = [["Comissão:", `${taxa}%`, ""], ["", "", ""], ["Vendedor", "Vendas", "Comissão"], ...nomes.map((n, i) => [n, vendas[i], ""])];
+    const pl = { linhas };
+    const r = rInt(5, 7), r2 = rInt(4, 7); const i2 = r2 - 4;
+    const serie = pick(["mes", "num"]);
+    let pSerie, rSerie, eSerie;
+    if (serie === "mes") {
+      const m = rInt(0, 8), k = rInt(2, 3);
+      pSerie = `A2 tem "${MESES[m]}". Você arrasta a alça de preenchimento para baixo até A${2 + k}. O que aparece em A${2 + k}?`;
+      rSerie = MESES[m + k]; eSerie = `O Excel continua a sequência de meses: ${MESES.slice(m, m + k + 1).join(", ")}.`;
+    } else {
+      const ini = rInt(1, 5) * 5, passo = pick([5, 10, 25]);
+      pSerie = `A2 tem ${ini} e A3 tem ${ini + passo}. Você seleciona as duas e arrasta a alça até A6. Qual valor fica em A6?`;
+      rSerie = ini + passo * 4; eSerie = `Com duas células o Excel aprende o passo (${passo}): ${[0, 1, 2, 3, 4].map((k) => ini + passo * k).join(", ")}.`;
+    }
+    const c0 = pick(["A", "B"]); const desloc = pick([1, 2]); const cN = String.fromCharCode(c0.charCodeAt(0) + desloc); const ln = rInt(2, 9);
+    return [
+      dig(pl, `C4 tem =B4*$B$1. Você arrasta a fórmula até C${r}. Como ela fica em C${r}?`, `=B${r}*$B$1`, `B4 é relativa e vira B${r}; $B$1 está travada e não muda.`, "formula"),
+      dig(pl, `Se C4 tivesse =B4*B1 (sem $) e fosse arrastada até C${r}, como ficaria a fórmula?`, `=B${r}*B${r - 3}`, `Sem $, as duas referências descem ${r - 4} linha(s): B${r} e B${r - 3} — e B${r - 3} não é a comissão! Por isso o $.`, "formula"),
+      dig(pl, `A fórmula =${c0}${ln}*2 é arrastada ${desloc} coluna(s) para a DIREITA. Como ela fica?`, `=${cN}${ln}*2`, `Arrastar para o lado avança a letra da coluna: ${c0} → ${cN}; a linha continua ${ln}.`, "formula", { mostrar_planilha: false }),
+      dig(pl, "Qual tecla coloca os cifrões ($) na referência enquanto você digita a fórmula?", "F4", "F4 alterna entre B1, $B$1, B$1 e $B1.", "atalho"),
+      tok(pl, `Monte a comissão de ${nomes[i2]} (vendas × taxa travada):`, "=___*___", [`B${r2}`, "$B$1"], ["B1", `$B$${r2}`, `A${r2}`], `Vendas da linha (relativa) × taxa única (travada): =B${r2}*$B$1.`),
+      dig(pl, `Qual a comissão de ${nomes[i2]}? (resultado de =B${r2}*$B$1)`, (vendas[i2] * taxa) / 100, `${fmtNum(vendas[i2])} × ${taxa}% = ${fmtNum((vendas[i2] * taxa) / 100)}.`, "numero"),
+      dig(pl, pSerie, rSerie, eSerie, serie === "mes" ? "texto" : "numero", { mostrar_planilha: false }),
+    ];
+  },
+
+  /* M5 · Organização de dados — carteira de clientes */
+  "t1-m5": () => {
+    const clientes = amostra(["Açougue Boi Bom", "Bazar Estrela", "Café Central", "Doceria Mel", "Empório Rural", "Farmácia Vida", "Gráfica Ágil", "Hotel Primavera"], 6);
+    const cidadesBase = ["Piracicaba", "Limeira", "Rio Claro", "S. Bárbara"];
+    const cidades = clientes.map(() => pick(cidadesBase));
+    if (!cidades.includes("S. Bárbara")) cidades[rInt(0, 5)] = "S. Bárbara";
+    const valores = unicos(6, 3, 60).map((v) => v * 50);
+    const linhas = [["Cliente", "Cidade", "Valor"], ...clientes.map((c, i) => [c, cidades[i], valores[i]])];
+    const pl = { linhas };
+    const maior = clientes[valores.indexOf(Math.max(...valores))];
+    const menor = clientes[valores.indexOf(Math.min(...valores))];
+    const [ordTxt, ordResp] = pick([["do MAIOR para o menor", maior], ["do MENOR para o maior", menor]]);
+    const ultimoAZ = [...clientes].sort((a, b) => a.localeCompare(b, "pt-BR")).pop();
+    const cidadeF = pick(cidades); const nF = cidades.filter((c) => c === cidadeF).length;
+    const nSB = cidades.filter((c) => c === "S. Bárbara").length;
+    const [pcP, pcA, pcE] = pick([
+      ["congelar a linha 1 E a coluna A ao mesmo tempo", "B2", "O Excel congela tudo ACIMA e à ESQUERDA da célula escolhida: B2 prende a linha 1 e a coluna A."],
+      ["congelar as linhas 1 e 2 E a coluna A", "B3", "Tudo acima de B3 (linhas 1 e 2) e à esquerda (coluna A) fica preso."],
+      ["congelar a linha 1 E as colunas A e B", "C2", "Tudo acima de C2 (linha 1) e à esquerda (colunas A e B) fica preso."],
+    ]);
+    const atalhos = amostra([
+      ["Qual atalho liga o filtro (as setinhas no cabeçalho)?", "Ctrl+Shift+L", "Ctrl+Shift+L liga e desliga o filtro."],
+      ["Qual atalho abre o LOCALIZAR no Excel em português?", "Ctrl+L", "Ctrl+L é Localizar (no Excel em inglês é Ctrl+F)."],
+      ["Qual atalho abre o SUBSTITUIR no Excel em português?", "Ctrl+U", "Ctrl+U abre o Substituir."],
+    ], 2);
+    return [
+      dig(pl, `Classificando a tabela por Valor, ${ordTxt}, qual cliente fica na linha 2?`, ordResp, `A linha 2 recebe o ${ordTxt.startsWith("do MAIOR") ? "maior" : "menor"} valor: ${ordResp}.`),
+      dig(pl, "Classificando por Cliente de A→Z, quem fica na ÚLTIMA linha (linha 7)?", ultimoAZ, `Em ordem alfabética, o último é ${ultimoAZ}.`),
+      dig(pl, `Filtrando a coluna Cidade para mostrar só ${cidadeF}, quantas linhas de dados ficam visíveis?`, nF, `${cidadeF} aparece ${nF} vez(es). As outras linhas só ficam escondidas, não apagadas.`, "numero"),
+      dig(pl, "Com Substituir Tudo, você troca \"S. Bárbara\" por \"Santa Bárbara\". Quantas células mudam?", nSB, `"S. Bárbara" aparece ${nSB} vez(es) na coluna Cidade.`, "numero"),
+      cel(pl, `Toque na célula que você selecionaria antes de Congelar Painéis para ${pcP}.`, pcA, pcE),
+      esc(pl, "Você selecionou SÓ a coluna C (Valor) e classificou do maior para o menor. O que acontece?", "Os valores mudam de lugar e ficam no cliente errado", ["A tabela inteira é ordenada certinho", "Nada muda", "O Excel apaga a coluna"], "Classificar uma coluna isolada desalinha as linhas. Clique numa célula da tabela e deixe o Excel pegar tudo."),
+      ...atalhos.map(([p, r, e]) => dig(pl, p, r, e, "atalho")),
+    ];
+  },
+
+  /* M6 · Lógica: SE — metas de vendas */
+  "t2-m6": () => {
+    const meta = pick([8000, 10000, 12000]);
+    const nomes = amostra(["Ana", "Beto", "Caio", "Dora", "Enzo", "Flora", "Gael", "Iris"], 5);
+    const vendas = unicos(5, 4, 20).map((v) => v * 1000); vendas[rInt(0, 4)] = meta; // sempre alguém EXATAMENTE na meta
+    const faltas = nomes.map(() => rInt(0, 4));
+    const linhas = [["Vendedor", "Vendas", "Faltas"], ...nomes.map((n, i) => [n, vendas[i], faltas[i]])];
+    const pl = { linhas };
+    const iMeta = vendas.indexOf(meta); const rMeta = iMeta + 2;
+    const r1 = pick([rMeta, rInt(2, 6)]); const v1 = vendas[r1 - 2];
+    const r3 = rInt(2, 6), r4 = rInt(2, 6), r5 = rInt(2, 6); const maxF = pick([1, 2]);
+    const e4 = vendas[r4 - 2] >= meta && faltas[r4 - 2] <= maxF;
+    const o5 = vendas[r5 - 2] >= meta || faltas[r5 - 2] === 0;
+    const r6 = rInt(2, 6); const v6 = vendas[r6 - 2];
+    const faixa = v6 >= 15000 ? "Ouro" : v6 >= 10000 ? "Prata" : "Bronze";
+    const bugs = [
+      [["=SE(", "B2", ">=", `${meta}`, ";", "Bônus", ";", "\"Sem bônus\"", ")"], 5, "Texto dentro de fórmula precisa de aspas: \"Bônus\". Sem elas, o Excel dá #NOME?."],
+      [["=SE(", "B2", "=>", `${meta}`, ";", "\"Bônus\"", ";", "\"Sem bônus\"", ")"], 2, "O operador é >= (maior primeiro, igual depois). => não existe."],
+      [["=SE(", "B2", ">=", `${meta}`, ";", "\"Bônus\"", ";", "\"Sem bônus\"", "("], 8, "A fórmula precisa terminar fechando o parêntese: )."],
+    ];
+    const [bt, bi, be] = pick(bugs);
+    return [
+      dig(pl, `Com =SE(B${r1}>=${meta};"Bônus";"Sem bônus"), o que aparece para ${nomes[r1 - 2]}?`, v1 >= meta ? "Bônus" : "Sem bônus", `${fmtNum(v1)} ${v1 >= meta ? "é maior ou igual a" : "é menor que"} ${fmtNum(meta)}. O >= INCLUI o valor exato da meta.`),
+      dig(pl, `E com =SE(B${rMeta}>${meta};"Bônus";"Sem bônus") para ${nomes[iMeta]}?`, "Sem bônus", `${nomes[iMeta]} vendeu exatamente ${fmtNum(meta)}. O > é estrito: ${fmtNum(meta)} não é MAIOR que ${fmtNum(meta)}.`),
+      dig(pl, `Escreva a fórmula para D${r3}: se as vendas (B${r3}) forem maiores ou iguais a ${meta}, mostrar "Bateu"; senão, "Não bateu".`, `=SE(B${r3}>=${meta};"Bateu";"Não bateu")`, "Teste; resposta se verdadeiro; resposta se falso — textos entre aspas.", "formula"),
+      dig(pl, `=SE(E(B${r4}>=${meta};C${r4}<=${maxF});"Promovido";"Aguardar") — o que aparece para ${nomes[r4 - 2]}?`, e4 ? "Promovido" : "Aguardar", `Vendas ${vendas[r4 - 2] >= meta ? "OK" : "abaixo da meta"}, faltas ${faltas[r4 - 2]} ${faltas[r4 - 2] <= maxF ? "OK" : `acima de ${maxF}`}. O E exige as DUAS condições.`),
+      dig(pl, `=SE(OU(B${r5}>=${meta};C${r5}=0);"Prêmio";"-") — o que aparece para ${nomes[r5 - 2]}?`, o5 ? "Prêmio" : "-", `Vendas ${vendas[r5 - 2] >= meta ? "bateram a meta" : "abaixo da meta"}; faltas = ${faltas[r5 - 2]}. O OU precisa de só UMA condição verdadeira.`),
+      dig(pl, `=SES(B${r6}>=15000;"Ouro";B${r6}>=10000;"Prata";VERDADEIRO;"Bronze") — o que aparece para ${nomes[r6 - 2]}?`, faixa, `${fmtNum(v6)}: o SES para no primeiro teste verdadeiro → ${faixa}.`),
+      erro(pl, "Toque no erro desta fórmula:", bt, bi, be),
+    ];
+  },
+
+  /* M7 · Somas e contagens condicionais — canais de venda */
+  "t2-m7": () => {
+    const canais = ["Loja", "Site", "WhatsApp"];
+    const canal = Array.from({ length: 8 }, (_, i) => (i < 3 ? canais[i] : pick(canais)));
+    const ordem = shuffle([0, 1, 2, 3, 4, 5, 6, 7]);
+    const can = ordem.map((k) => canal[k]);
+    const val = unicos(8, 2, 30).map((v) => v * 50);
+    const linhas = [["Pedido", "Canal", "Valor"], ...can.map((c, i) => [`PD-${String(i + 21).padStart(3, "0")}`, c, val[i]])];
+    const pl = { linhas };
+    const c1 = pick(canais), c2 = pick(canais), c3 = pick(canais), c4 = pick(canais), c5 = pick(canais);
+    const lim = pick([300, 500, 800]);
+    const cont = (c) => can.filter((x) => x === c).length;
+    const soma = (c) => can.reduce((s, x, i) => s + (x === c ? val[i] : 0), 0);
+    const acimaLim = val.filter((v) => v > lim).length;
+    const somases = can.reduce((s, x, i) => s + (x === c5 && val[i] >= lim ? val[i] : 0), 0);
+    const media = soma(c3) / cont(c3);
+    return [
+      dig(pl, `Quanto dá =CONT.SE(B2:B9;"${c1}")?`, cont(c1), `"${c1}" aparece ${cont(c1)} vez(es) na coluna Canal.`, "numero"),
+      dig(pl, `Quanto dá =CONT.SE(C2:C9;">${lim}")?`, acimaLim, `Valores MAIORES que ${lim}: ${val.filter((v) => v > lim).map(fmtNum).join(", ") || "nenhum"} → ${acimaLim}.`, "numero"),
+      dig(pl, `Quanto dá =SOMASE(B2:B9;"${c2}";C2:C9)?`, soma(c2), `Soma dos valores onde o canal é ${c2}: ${fmtNum(soma(c2))}.`, "numero"),
+      dig(pl, `Quanto dá =MÉDIASE(B2:B9;"${c3}";C2:C9)?`, media, `Média dos ${cont(c3)} pedido(s) de ${c3}: ${fmtNum(soma(c3))} ÷ ${cont(c3)} = ${fmtNum(media)}.`, "numero"),
+      dig(pl, `Escreva a fórmula que SOMA o Valor dos pedidos do canal ${c4} (use B2:B9 e C2:C9).`, `=SOMASE(B2:B9;"${c4}";C2:C9)`, `SOMASE(onde testar; critério; o que somar).`, "formula", { aceitar: [`=SOMASES(C2:C9;B2:B9;"${c4}")`] }),
+      dig(pl, `Quanto dá =SOMASES(C2:C9;B2:B9;"${c5}";C2:C9;">=${lim}")?`, somases, `Só as linhas de ${c5} COM valor ≥ ${lim} entram: ${fmtNum(somases)}.`, "numero"),
+      erro(pl, `Toque no erro desta fórmula que deveria somar os pedidos do ${c1}:`, ["=SOMASE(", "B2:B9", ";", `"${c1}"`, ";", "C2:C5", ")"], 5, "Os dois intervalos precisam ter o MESMO tamanho: C2:C9, não C2:C5.", true),
+    ];
+  },
+
+  /* M8 · Busca — escola de idiomas */
+  "t2-m8": () => {
+    const cursos = amostra([["ING", "Inglês"], ["ESP", "Espanhol"], ["FRA", "Francês"], ["ITA", "Italiano"], ["ALE", "Alemão"], ["JAP", "Japonês"], ["LIB", "Libras"]], 5);
+    const mens = unicos(5, 18, 45).map((v) => v * 10); const vagas = unicos(5, 3, 25);
+    const cods = cursos.map(([c], i) => `${c}-${i + 1}`);
+    const linhas = [["Código", "Curso", "Mensalidade", "Vagas"], ...cursos.map(([, n], i) => [cods[i], n, mens[i], vagas[i]])];
+    const pl = { linhas };
+    const i1 = rInt(0, 4), i3 = rInt(0, 4), i6 = rInt(0, 4), i7 = rInt(0, 4);
+    const k1 = pick([2, 3, 4]); const ret1 = linhas[i1 + 1][k1 - 1];
+    const [nomeCol, kCol] = pick([["Curso", 2], ["Mensalidade", 3], ["Vagas", 4]]);
+    const inexist = pick(["RUS-9", "CHI-8", "GRE-7"]);
+    return [
+      dig(pl, `O que =PROCV("${cods[i1]}";A2:D6;${k1};FALSO) devolve?`, ret1, `Acha ${cods[i1]} na coluna A e devolve a ${k1}ª coluna da matriz: ${typeof ret1 === "number" ? fmtNum(ret1) : ret1}.`, typeof ret1 === "number" ? "numero" : "texto"),
+      dig(pl, `No PROCV com a matriz A2:D6, qual número de coluna (núm_índice) traz ${nomeCol === "Curso" ? "o" : "a(s)"} ${nomeCol}?`, kCol, `A matriz começa em A (1), então B=2, C=3, D=4. ${nomeCol} é a coluna ${kCol}.`, "numero"),
+      dig(pl, `Escreva o PROCV que traz a Mensalidade do código ${cods[i3]} (matriz A2:D6).`, `=PROCV("${cods[i3]}";A2:D6;3;FALSO)`, `Valor; matriz; coluna 3 (Mensalidade); FALSO para busca exata.`, "formula", { aceitar: [`=PROCV("${cods[i3]}";$A$2:$D$6;3;FALSO)`, `=PROCV("${cods[i3]}";A2:D6;3;0)`, `=PROCV(A${i3 + 2};A2:D6;3;FALSO)`] }),
+      dig(pl, `O que =PROCV("${inexist}";A2:D6;2;FALSO) devolve?`, "#N/D", `${inexist} não existe na coluna A → #N/D (não encontrado).`, "erro"),
+      dig(pl, `E =PROCV("${cods[i1]}";A2:D6;5;FALSO)?`, "#REF!", "A matriz A2:D6 só tem 4 colunas; pedir a 5ª dá #REF!.", "erro"),
+      dig(pl, `O que =ÍNDICE(A2:A6;CORRESP("${cursos[i6][1]}";B2:B6;0)) devolve?`, cods[i6], `CORRESP acha ${cursos[i6][1]} na posição ${i6 + 1}; ÍNDICE devolve o item ${i6 + 1} da coluna A: ${cods[i6]}. Busca "para a esquerda"!`),
+      dig(pl, `O que =PROCX("${cursos[i7][1]}";B2:B6;D2:D6) devolve?`, vagas[i7], `Procura ${cursos[i7][1]} na coluna B e devolve a coluna D (Vagas): ${vagas[i7]}.`, "numero"),
+    ];
+  },
+
+  /* M9 · Texto — cadastro de funcionários */
+  "t2-m9": () => {
+    const pessoas = amostra([["Carla", "Mendes"], ["Rafael", "Costa"], ["Bianca", "Nunes"], ["Otávio", "Ramos"], ["Luana", "Prado"], ["Vitor", "Assis"], ["Sofia", "Lemos"]], 4);
+    const deps = pessoas.map(() => pick(["RH", "TI", "FIN", "MKT"]));
+    const anos = pessoas.map(() => rInt(2019, 2026)); const nums = unicos(4, 1, 250);
+    const cods = pessoas.map((_, i) => `${deps[i].slice(0, 2)}-${anos[i]}-${String(nums[i]).padStart(3, "0")}`);
+    const emails = pessoas.map(([n, s]) => `${n.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()}.${s.toLowerCase()}@empresa.com.br`);
+    const linhas = [["Nome", "Sobrenome", "Código", "E-mail"], ...pessoas.map(([n, s], i) => [n, s, cods[i], emails[i]])];
+    const pl = { linhas };
+    const r = rInt(2, 5), r2 = rInt(2, 5), r3 = rInt(2, 5), r4 = rInt(2, 5); const i = r - 2, i2 = r2 - 2, i3 = r3 - 2, i4 = r4 - 2;
+    const [fn, fv, fe] = pick([
+      [`=ESQUERDA(C${r3};2)`, cods[i3].slice(0, 2), "os 2 primeiros caracteres"],
+      [`=EXT.TEXTO(C${r3};4;4)`, cods[i3].slice(3, 7), "4 caracteres a partir da 4ª posição (o hífen conta!)"],
+      [`=DIREITA(C${r3};3)`, cods[i3].slice(-3), "os 3 últimos caracteres"],
+    ]);
+    return [
+      dig(pl, `O que =A${r}&" "&B${r} devolve?`, `${pessoas[i][0]} ${pessoas[i][1]}`, `Nome + espaço + sobrenome: "${pessoas[i][0]} ${pessoas[i][1]}".`),
+      dig(pl, `E =A${r2}&B${r2} (sem o " ")?`, `${pessoas[i2][0]}${pessoas[i2][1]}`, `O Excel não coloca espaço sozinho: "${pessoas[i2][0]}${pessoas[i2][1]}".`),
+      dig(pl, `O que ${fn} devolve?`, fv, `${cods[i3]} → ${fe}: "${fv}".`),
+      dig(pl, `Quanto dá =LOCALIZAR("@";D${r4})?`, emails[i4].indexOf("@") + 1, `Contando cada caractere de ${emails[i4]}, o @ está na posição ${emails[i4].indexOf("@") + 1}.`, "numero"),
+      dig(pl, `Quanto dá =NÚM.CARACT(A${r})?`, pessoas[i][0].length, `"${pessoas[i][0]}" tem ${pessoas[i][0].length} caracteres.`, "numero"),
+      dig(pl, `Escreva a fórmula que junta o Nome (A${r2}) e o Sobrenome (B${r2}) com um espaço no meio.`, `=A${r2}&" "&B${r2}`, `=A${r2}&" "&B${r2} — ou =CONCAT(A${r2};" ";B${r2}).`, "formula", { aceitar: [`=CONCAT(A${r2};" ";B${r2})`, `=CONCATENAR(A${r2};" ";B${r2})`] }),
+      dig(pl, `Qual fórmula limpa os espaços extras e capitaliza o texto de A${r}? (use ARRUMAR dentro de PRI.MAIÚSCULA)`, `=PRI.MAIÚSCULA(ARRUMAR(A${r}))`, "Uma função dentro da outra: primeiro ARRUMAR tira os espaços, depois PRI.MAIÚSCULA capitaliza.", "formula"),
+    ];
+  },
+
+  /* M10 · Datas — pedidos e prazos */
+  "t2-m10": () => {
+    const peds = Array.from({ length: 4 }, () => dt(2026, rInt(1, 11), rInt(1, 28))).sort((a, b) => a - b);
+    const prazos = peds.map(() => pick([7, 10, 15, 30, 45]));
+    const linhas = [["Pedido", "Data", "Prazo (dias)"], ...peds.map((d, i) => [`PD-${i + 101}`, fmtData(d), prazos[i]])];
+    const pl = { linhas };
+    const r = rInt(2, 5), r2 = rInt(2, 5), r3 = rInt(2, 5); const d = peds[r - 2];
+    const [fn, fv] = pick([["DIA", d.getUTCDate()], ["MÊS", d.getUTCMonth() + 1], ["ANO", d.getUTCFullYear()]]);
+    const venc = somaDias(peds[r2 - 2], prazos[r2 - 2]);
+    const dif = Math.round((peds[3] - peds[0]) / 86400000);
+    const du = pick([3, 5, 8]); const d3 = peds[r3 - 2]; const chegada = diaTrabalho(d3, du);
+    const ini = peds[0], fim = somaDias(peds[0], rInt(8, 20));
+    const adm = dt(rInt(2012, 2022), rInt(1, 12), rInt(1, 28)); const ref = dt(2026, rInt(1, 12), rInt(1, 28));
+    return [
+      dig(pl, `Quanto dá =${fn}(B${r})?`, fv, `${fn} extrai a parte da data ${fmtData(d)} como número: ${fv}.`, "numero", { respostaTexto: String(fv) }),
+      dig(pl, `Qual data aparece com =B${r2}+C${r2}? (dd/mm/aaaa)`, fmtData(venc), `${fmtData(peds[r2 - 2])} + ${prazos[r2 - 2]} dias = ${fmtData(venc)}.`, "data"),
+      dig(pl, "Quanto dá =B5-B2?", dif, `Data menos data = dias entre elas: ${dif}.`, "numero"),
+      dig(pl, `B${r3} (${fmtData(d3)}) cai numa ${DIAS_SEMANA[d3.getUTCDay()]}. Que data =DIATRABALHO(B${r3};${du}) devolve?`, fmtData(chegada), `Contando ${du} dias úteis depois de ${fmtData(d3)} e pulando sábados e domingos: ${fmtData(chegada)} (${DIAS_SEMANA[chegada.getUTCDay()]}).`, "data"),
+      dig(pl, `${fmtData(ini)} é ${DIAS_SEMANA[ini.getUTCDay()]} e ${fmtData(fim)} é ${DIAS_SEMANA[fim.getUTCDay()]}. Quantos dias úteis a DIATRABALHOTOTAL conta entre essas datas (incluindo as duas)?`, diaTrabalhoTotal(ini, fim), `Contando de ${fmtData(ini)} a ${fmtData(fim)} sem sábados e domingos: ${diaTrabalhoTotal(ini, fim)}.`, "numero"),
+      dig(pl, `Admissão em ${fmtData(adm)}, data de referência ${fmtData(ref)}. Quanto dá =DATADIF(admissão;referência;"Y")?`, anosCompletos(adm, ref), `"Y" conta só anos COMPLETOS: ${anosCompletos(adm, ref)}.`, "numero", { mostrar_planilha: false }),
+      dig(pl, "Escreva a fórmula que mostra a data de hoje e se atualiza sozinha todo dia.", "=HOJE()", "=HOJE() com parênteses vazios. Ctrl+; insere a data FIXA.", "formula", { mostrar_planilha: false }),
+    ];
+  },
+
+  /* M11 · Erros — relatório de devoluções */
+  "t2-m11": () => {
+    const prods = amostra(["Mochila", "Garrafa", "Agenda", "Estojo", "Fone", "Luminária"], 4);
+    const dev = unicos(4, 2, 15); const z = rInt(0, 3); dev[z] = 0;
+    const vend = dev.map((d) => (d === 0 ? rInt(20, 200) : d * rInt(4, 14)));
+    const cods = prods.map((p, i) => `${p.slice(0, 2).toUpperCase()}-${i + 1}`);
+    const linhas = [["Código", "Produto", "Vendidos", "Devolvidos"], ...prods.map((p, i) => [cods[i], p, vend[i], dev[i]])];
+    const pl = { linhas };
+    const rz = z + 2; const rn = [0, 1, 2, 3].filter((k) => k !== z).map((k) => k + 2); const ro = pick(rn);
+    const razao = vend[ro - 2] / dev[ro - 2];
+    const inexist = pick(["ZZ-9", "XY-7", "QW-5"]);
+    return [
+      dig(pl, `O que aparece em =C${rz}/D${rz}?`, "#DIV/0!", `D${rz} é zero: divisão por zero → #DIV/0!.`, "erro"),
+      dig(pl, `O que =PROCV("${inexist}";A2:D5;2;FALSO) devolve?`, "#N/D", `${inexist} não existe na coluna A → #N/D.`, "erro"),
+      dig(pl, `O que aparece em =C${ro}+B${ro}?`, "#VALOR!", `B${ro} é texto (${prods[ro - 2]}); somar texto com número dá #VALOR!.`, "erro"),
+      dig(pl, "O que aparece em =SOMAR(C2:C5)?", "#NOME?", "A função se chama SOMA. Nome desconhecido → #NOME?.", "erro"),
+      dig(pl, `O que =SEERRO(C${rz}/D${rz};"-") mostra?`, "-", "SEERRO captura QUALQUER erro, inclusive o #DIV/0!, e mostra o plano B: \"-\"."),
+      dig(pl, `E =SENÃODISP(C${rz}/D${rz};"sem dado")?`, "#DIV/0!", "SENÃODISP só captura o #N/D. O #DIV/0! continua aparecendo — de propósito, para você ver o problema.", "erro"),
+      dig(pl, `O que =SEERRO(C${ro}/D${ro};0) mostra?`, razao, `Não há erro: ${vend[ro - 2]} ÷ ${dev[ro - 2]} = ${fmtNum(razao)}. O SEERRO só age quando a fórmula falha.`, "numero"),
+      dig(pl, `O que =SENÃODISP(PROCV("${inexist}";A2:D5;2;FALSO);"Não cadastrado") mostra?`, "Não cadastrado", "Aqui o erro é #N/D — exatamente o que o SENÃODISP captura."),
+    ];
+  },
+};
+
+function montarDesafio(mod) {
+  const gerar = DESAFIOS[mod.id];
+  return { id: `${mod.id}-desafio`, titulo: "Desafio do módulo", revisao: true, desafio: true, exercicios: gerar ? gerar() : [] };
+}
+// Aprovado no desafio: acertar pelo menos 75% das questões de primeira
+const DESAFIO_MINIMO = 0.75;
+
+// ---------- Conferência das respostas digitadas ----------
+const semAcento = (s) => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "");
+const normTexto = (s) => semAcento(s).trim().replace(/\s+/g, " ").toLowerCase();
+const normFormula = (s) => normTexto(s).replace(/\s+/g, "").replace(/,/g, ";");
+const normAtalho = (s) => normTexto(s).replace(/[\s+\-]/g, "");
+const normErro = (s) => normTexto(s).replace(/[\s#!?]/g, "");
+function lerNumero(s) {
+  let t = String(s).replace(/r\$|\s|%/gi, "");
+  if (t === "") return null;
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+  const n = Number(t);
+  return isNaN(n) ? null : n;
+}
+function lerData(s) {
+  const m = String(s).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (!m) return null;
+  let y = +m[3]; if (y < 100) y += 2000;
+  return `${+m[1]}/${+m[2]}/${y}`;
+}
+function confereDigitado(ex, digitado) {
+  const alvos = [ex.resposta, ...(ex.aceitar || [])];
+  if (!ex.modo) { // exercícios antigos: comparação simples
+    const t = digitado.trim().toLowerCase();
+    return alvos.some((a) => String(a).toLowerCase() === t);
+  }
+  if (ex.modo === "numero") { const n = lerNumero(digitado); return n !== null && alvos.some((a) => Math.abs(n - Number(a)) < 0.011); }
+  if (ex.modo === "data") { const d = lerData(digitado); return d !== null && alvos.some((a) => lerData(a) === d); }
+  const f = ex.modo === "formula" ? normFormula : ex.modo === "atalho" ? normAtalho : ex.modo === "erro" ? normErro : normTexto;
+  return alvos.some((a) => f(a) === f(digitado));
+}
+
 function montarRevisao(mod) {
   const banco = [];
   mod.licoes.forEach((l) => l.exercicios.forEach((ex) => banco.push({ ...ex, _planilha: l.planilha })));
@@ -7100,7 +7482,7 @@ function Sheet({ linhas, destaque, clicavel, selecionada, onCelula, feedbackCel,
                       ...cell,
                       position: "relative",
                       fontWeight: r === 0 ? 700 : 400,
-                      textAlign: typeof row[c] === "number" ? "right" : "left",
+                      textAlign: typeof row[c] === "number" || /^\d{2}\/\d{2}\/\d{4}$/.test(row[c]) ? "right" : "left", // data é número por dentro
                       background: bg,
                       cursor: clicavel ? "pointer" : "default",
                       outline: sel ? `2px solid ${corSel}` : "none",
@@ -7399,8 +7781,8 @@ export default function App() {
 
   const iniciarLicao = (mi, li) => {
     const mod = MODULOS[mi];
-    // li igual ao número de lições = revisão do módulo (montada na hora)
-    const l = li < mod.licoes.length ? mod.licoes[li] : montarRevisao(mod);
+    // li = nº de lições → revisão; li = nº de lições + 1 → desafio (os dois montados na hora)
+    const l = li < mod.licoes.length ? mod.licoes[li] : li === mod.licoes.length ? montarRevisao(mod) : montarDesafio(mod);
     setModIdx(mi); setLicaoIdx(li); setLicaoObj(l);
     setExs(l.exercicios.map(prepareExercise)); // variantes + embaralhamento a cada início
     track("licao_iniciada", { licao: l.id, modulo: mod.titulo });
@@ -7414,10 +7796,7 @@ export default function App() {
     let ok = false;
     if (ex.tipo === "escolha") ok = sel === ex.resposta;
     if (ex.tipo === "vf") ok = sel === ex.resposta;
-    if (ex.tipo === "digitar") {
-      const t = digitado.trim().toLowerCase();
-      ok = t === String(ex.resposta).toLowerCase() || (ex.aceitar || []).map((a) => a.toLowerCase()).includes(t);
-    }
+    if (ex.tipo === "digitar") ok = confereDigitado(ex, digitado);
     if (ex.tipo === "clicar_celula") ok = celula === ex.alvo;
     if (ex.tipo === "ordenar") ok = ordem.length === ex.passos.length && ordem.every((p, i) => p === ex.passos[i]);
     if (ex.tipo === "achar_erro") ok = sel === ex.indice_errado;
@@ -7442,12 +7821,13 @@ export default function App() {
       if (dadosSalvos.ultimoDia !== hoje) novaStreak = dadosSalvos.ultimoDia === ontem ? streak + 1 : 1;
       setStreak(novaStreak);
       // aproveitamento desta tentativa; guarda sempre o MELHOR resultado
-      const pct = Math.round((exs.length / (exs.length + erros)) * 100);
+      // no desafio a nota é "acertos de primeira" — não dá para compensar chute com repetição
+      const pct = licao.desafio ? Math.max(0, Math.round(((exs.length - erros) / exs.length) * 100)) : Math.round((exs.length / (exs.length + erros)) * 100);
       const novasNotas = { ...notas, [licao.id]: Math.max(notas[licao.id] || 0, pct) };
       setNotas(novasNotas); setNotaFinal(pct);
       setUltimaLicao(licao.id);
       salvarLocal({ concluidas: novasConcluidas, xpTotal: novoXpTotal, streak: novaStreak, ultimoDia: hoje, notas: novasNotas });
-      track("licao_concluida", { licao: licao.id, erros, xp, aproveitamento: pct });
+      track(licao.desafio ? "desafio_concluido" : "licao_concluida", { licao: licao.id, erros, xp, aproveitamento: pct });
       // módulo inteiro (lições + revisão) concluído?
       const idsDoModulo = [...modulo.licoes.map((l) => l.id), `${modulo.id}-revisao`];
       const moduloCompleto = idsDoModulo.every((id) => novasConcluidas.includes(id));
@@ -7605,8 +7985,9 @@ export default function App() {
                 </span>
               )}
             </div>
-            {[...mod.licoes, { id: `${mod.id}-revisao`, titulo: "Revisão do módulo", revisao: true }].map((l, li) => {
-              const done = concluidas.includes(l.id);
+            {[...mod.licoes, { id: `${mod.id}-revisao`, titulo: "Revisão do módulo", revisao: true }, { id: `${mod.id}-desafio`, titulo: "Desafio do módulo", revisao: true, desafio: true }].map((l, li) => {
+              // desafio só conta como feito quando foi SUPERADO (≥ 75%)
+              const done = l.desafio ? (notas[l.id] || 0) >= DESAFIO_MINIMO * 100 : concluidas.includes(l.id);
               const nota = notas[l.id];
               const ouro = nota === 100;
               const corBorda = ouro ? C.gold : done ? C.green : C.line;
@@ -7614,14 +7995,14 @@ export default function App() {
                 <button key={l.id} id={"licao-" + l.id} onClick={() => iniciarLicao(mi, li)}
                   style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: ouro ? "#FDF6E8" : done ? "#E9F4EE" : "#fff", border: `2px solid ${corBorda}`, borderBottom: `4px solid ${corBorda}`, borderRadius: 14, padding: "14px 16px", marginBottom: 10, cursor: "pointer" }}>
                   <div style={{ width: 38, height: 38, borderRadius: 19, background: ouro ? C.gold : done ? C.green : C.mist, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {ouro ? <Zap size={19} color="#fff" fill="#fff" /> : done ? <Check size={20} color="#fff" /> : l.revisao ? <Flame size={18} color={C.navy} /> : <BookOpen size={18} color={C.navy} />}
+                    {l.desafio ? <Trophy size={18} color={done ? "#fff" : C.navy} /> : ouro ? <Zap size={19} color="#fff" fill="#fff" /> : done ? <Check size={20} color="#fff" /> : l.revisao ? <Flame size={18} color={C.navy} /> : <BookOpen size={18} color={C.navy} />}
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 800, color: C.navy }}>
-                      {l.revisao ? "Revisão do módulo" : `Lição ${li + 1} · ${l.titulo}`}
+                      {l.revisao ? l.titulo : `Lição ${li + 1} · ${l.titulo}`}
                     </div>
                     <div style={{ fontFamily: font.ui, fontSize: 12.5, color: "#5A6660" }}>
-                      {l.revisao ? "12 exercícios sorteados de todo o módulo" : `Teoria + ${l.exercicios.length} exercícios`}
+                      {l.desafio ? "Planilha nova a cada tentativa · prove que aprendeu" : l.revisao ? "12 exercícios sorteados de todo o módulo" : `Teoria + ${l.exercicios.length} exercícios`}
                       {nota !== undefined ? ` · melhor: ${nota}%` : ""}
                     </div>
                   </div>
@@ -7728,23 +8109,35 @@ export default function App() {
     const total = exs.length;
     const acc = notaFinal || Math.round((total / (total + erros)) * 100);
     const melhor = notas[licao.id] || acc;
+    const ehDesafio = !!licao.desafio;
+    const acertos = Math.max(0, total - erros);
+    const minimo = Math.ceil(total * DESAFIO_MINIMO);
+    const aprovado = ehDesafio && acertos >= minimo;
     return (
       <Shell>
         <div style={{ textAlign: "center", paddingTop: 40 }}>
-          <div style={{ fontSize: 56 }}>🏁</div>
-          <div style={{ fontFamily: font.ui, fontSize: 24, fontWeight: 900, color: C.navy, margin: "8px 0 18px" }}>Lição concluída!</div>
+          <div style={{ fontSize: 56 }}>{ehDesafio ? (aprovado ? "🏆" : "💪") : "🏁"}</div>
+          <div style={{ fontFamily: font.ui, fontSize: 24, fontWeight: 900, color: C.navy, margin: "8px 0 18px" }}>
+            {ehDesafio ? (aprovado ? "Desafio superado!" : "Quase lá!") : "Lição concluída!"}
+          </div>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 28 }}>
             <Stat label="XP" value={`+${xp}`} color={C.gold} />
-            <Stat label="Precisão" value={`${acc}%`} color={C.green} />
+            {ehDesafio
+              ? <Stat label="Acertos" value={`${acertos}/${total}`} color={aprovado ? C.green : C.navy} />
+              : <Stat label="Precisão" value={`${acc}%`} color={C.green} />}
             <Stat label="Vidas" value={vidas} color={C.red} />
           </div>
           <div style={{ fontFamily: font.ui, fontSize: 14, color: acc === 100 ? "#B07D18" : "#5A6660", fontWeight: 700, marginBottom: 16, lineHeight: 1.5 }}>
-            {acc === 100
-              ? "⭐ Selo dourado conquistado nesta lição!"
-              : `Melhor até agora: ${melhor}%. Refaça e chegue aos 100% para ganhar o selo dourado.`}
+            {ehDesafio
+              ? (aprovado
+                ? `Você acertou ${acertos} de ${total} de primeira, numa planilha que nunca tinha visto. Isso é aprendizado de verdade!`
+                : `Para superar o desafio são ${minimo} acertos de ${total}. Revise as lições do módulo e tente de novo — a planilha muda a cada tentativa.`)
+              : acc === 100
+                ? "⭐ Selo dourado conquistado nesta lição!"
+                : `Melhor até agora: ${melhor}%. Refaça e chegue aos 100% para ganhar o selo dourado.`}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <Btn full onClick={() => iniciarLicao(modIdx, licaoIdx)}>Refazer (embaralha tudo)</Btn>
+            <Btn full onClick={() => iniciarLicao(modIdx, licaoIdx)}>{ehDesafio ? "Tentar com uma planilha nova" : "Refazer (embaralha tudo)"}</Btn>
             <Btn full color={C.navy} dark="#082A4A" onClick={() => setTela("home")}>Voltar às lições</Btn>
           </div>
           {TALLY_EMAIL_ID && !emailStatus && concluidas.length >= PEDIR_EMAIL_APOS && (
@@ -7955,7 +8348,7 @@ export default function App() {
             </div>
             {feedback === "wrong" && ex.resposta !== undefined && !["ordenar", "ligar_pares", "tokens", "achar_erro"].includes(ex.tipo) && (
               <div style={{ fontFamily: font.ui, fontSize: 13.5, fontWeight: 700, color: C.redDark, marginTop: 6 }}>
-                Resposta: {ex.tipo === "vf" ? (ex.resposta ? "Verdadeiro" : "Falso") : ex.tipo === "clicar_celula" ? ex.alvo : String(ex.resposta)}
+                Resposta: {ex.tipo === "vf" ? (ex.resposta ? "Verdadeiro" : "Falso") : ex.tipo === "clicar_celula" ? ex.alvo : (ex.respostaTexto || String(ex.resposta))}
               </div>
             )}
             {feedback === "wrong" && ex.tipo === "clicar_ribbon" && (
