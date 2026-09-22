@@ -7316,6 +7316,7 @@ export default function App() {
   const [concluidas, setConcluidas] = useState(() => carregar().concluidas || []);
   const [xpTotal, setXpTotal] = useState(() => carregar().xpTotal || 0);
   const [streak, setStreak] = useState(() => carregar().streak || 0);
+  const [viuBoasVindas, setViuBoasVindas] = useState(() => !!carregar().boasVindas || (carregar().concluidas || []).length > 0);
   const [emailStatus, setEmailStatus] = useState(() => carregar().email || null); // "feito" | "depois" | null
   const [notas, setNotas] = useState(() => carregar().notas || {});   // melhor aproveitamento por lição
   const [licaoObj, setLicaoObj] = useState(null);                      // lição atual (normal ou revisão)
@@ -7359,6 +7360,40 @@ export default function App() {
     window.scrollTo(0, 0);
     if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
   }, [tela, idx, licaoIdx, modIdx]);
+
+  // ---- Rotas virtuais: cada tela vira uma "página" para o Vercel Analytics
+  // (sem isso, quem faz 3 lições conta como rejeição) e o botão Voltar do celular
+  // volta para a lista em vez de fechar o site.
+  const caminhoTela = () => {
+    if (tela === "home") return viuBoasVindas ? "/" : "/boas-vindas";
+    const id = licao && licao.id ? licao.id : "x";
+    if (tela === "teoria") return `/licao/${id}`;
+    if (tela === "licao") return `/licao/${id}/exercicios`;
+    return `/licao/${id}/${tela}`; // fim | modulo
+  };
+  useEffect(() => {
+    const alvo = caminhoTela();
+    if (window.location.pathname === alvo) return;
+    try {
+      // abrindo o site já em outra rota (ex.: recarregou no meio da lição): só corrige, sem empilhar
+      if (tela === "home") window.history.replaceState({}, "", alvo);
+      else window.history.pushState({ tela }, "", alvo);
+    } catch (e) {}
+  }, [tela, licao && licao.id, viuBoasVindas]);
+  useEffect(() => {
+    const voltar = () => setTela("home");
+    window.addEventListener("popstate", voltar);
+    return () => window.removeEventListener("popstate", voltar);
+  }, []);
+  const fecharBoasVindas = () => { setViuBoasVindas(true); salvarLocal({ boasVindas: true }); };
+  // próxima lição ainda não concluída (para o botão "Continuar")
+  const proxima = (() => {
+    for (let mi = 0; mi < MODULOS.length; mi++) {
+      const ls = MODULOS[mi].licoes;
+      for (let li = 0; li < ls.length; li++) if (!concluidas.includes(ls[li].id)) return { mi, li, l: ls[li] };
+    }
+    return null;
+  })();
 
   const resetEx = () => { setSel(null); setDigitado(""); setCelula(null); setOrdem([]); setLigacoes({}); setEsqSel(null); setFlash(null); setPicked([]); setUsados([]); setFeedback(null); };
 
@@ -7485,6 +7520,39 @@ export default function App() {
     (ex && ex.tipo === "clicar_ribbon" && sel !== null) ||
     (ex && ex.tipo === "tokens" && picked.length === ex.lacunas);
 
+  /* ---------- BOAS-VINDAS: só na 1ª visita ---------- */
+  if (tela === "home" && !viuBoasVindas)
+    return (
+      <Shell>
+        <div style={{ minHeight: "calc(100vh - 64px)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 76, height: 76, borderRadius: 20, background: C.green, borderBottom: `6px solid ${C.greenDark}`, fontFamily: font.ui, fontSize: 38, fontWeight: 900, color: "#fff", marginBottom: 14 }}>a.</div>
+            <div style={{ fontFamily: font.ui, fontSize: 30, fontWeight: 900, color: C.navy, letterSpacing: -1 }}>
+              atalho<span style={{ color: C.green }}>.</span>
+            </div>
+            <div style={{ fontFamily: font.ui, fontSize: 24, fontWeight: 800, color: C.ink, lineHeight: 1.25, margin: "18px 0 10px" }}>
+              Aprenda Excel jogando, 3 minutos por dia
+            </div>
+            <div style={{ fontFamily: font.ui, fontSize: 15, color: "#4A554F", lineHeight: 1.5 }}>
+              Do zero ao PROCV, com exercícios numa planilha de verdade. Grátis, em português e sem cadastro.
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, margin: "26px 0" }}>
+            {[[BookOpen, "52 lições curtas, do básico ao intermediário"], [Zap, "Pratique, erre sem medo e ganhe XP"], [Flame, "Seu progresso fica salvo neste aparelho"]].map(([Ic, t]) => (
+              <div key={t} style={{ display: "flex", alignItems: "center", gap: 12, background: C.mist, borderRadius: 12, padding: "11px 14px" }}>
+                <Ic size={19} color={C.green} />
+                <span style={{ fontFamily: font.ui, fontSize: 14.5, fontWeight: 600, color: C.ink }}>{t}</span>
+              </div>
+            ))}
+          </div>
+          <Btn full onClick={() => { track("boas_vindas_comecar"); fecharBoasVindas(); iniciarLicao(0, 0); }}>Começar a 1ª lição</Btn>
+          <button onClick={fecharBoasVindas} style={{ marginTop: 14, background: "none", border: "none", cursor: "pointer", fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: C.navy, textDecoration: "underline" }}>
+            Ver todas as lições
+          </button>
+        </div>
+      </Shell>
+    );
+
   /* ---------- HOME: lista de lições do módulo ---------- */
   if (tela === "home")
     return (
@@ -7495,11 +7563,25 @@ export default function App() {
           </div>
           <div style={{ fontFamily: font.ui, fontSize: 13, color: "#5A6660" }}>o caminho mais curto para dominar as ferramentas do trabalho</div>
         </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 18, margin: "14px 0 20px", fontFamily: font.ui, fontWeight: 700, color: C.navy }}>
+        {xpTotal > 0 && <div style={{ display: "flex", justifyContent: "center", gap: 18, margin: "14px 0 20px", fontFamily: font.ui, fontWeight: 700, color: C.navy }}>
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Flame size={18} color={C.gold} fill={C.gold} /> {streak} {streak === 1 ? "dia" : "dias"}</span>
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Zap size={18} color={C.gold} fill={C.gold} /> {xpTotal} XP</span>
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Heart size={18} color={C.red} fill={C.red} /> {vidas}</span>
-        </div>
+        </div>}
+        {xpTotal === 0 && <div style={{ height: 16 }} />}
+
+        {proxima && (
+          <button onClick={() => { track("continuar_clicado", { licao: proxima.l.id }); iniciarLicao(proxima.mi, proxima.li); }}
+            style={{ display: "block", width: "100%", textAlign: "left", background: C.green, border: "none", borderBottom: `5px solid ${C.greenDark}`, borderRadius: 16, padding: "16px 18px", marginBottom: 20, cursor: "pointer" }}>
+            <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#CFE9DA", textTransform: "uppercase" }}>
+              {concluidas.length === 0 ? "Comece por aqui" : "Continuar de onde parou"}
+            </div>
+            <div style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 800, color: "#fff", margin: "3px 0 2px" }}>
+              Módulo {proxima.mi + 1} · Lição {proxima.li + 1}: {proxima.l.titulo}
+            </div>
+            <div style={{ fontFamily: font.ui, fontSize: 13, color: "#E3F2EA" }}>≈ 3 minutos · toque para começar →</div>
+          </button>
+        )}
 
         {/* Seletor de curso (estrutura multi-curso) */}
         <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
