@@ -22,7 +22,7 @@ const MODULOS = [
     "teoria": {
      "eyebrow": "Novo conceito",
      "titulo": "Planilha",
-     "intro": "Uma planilha é uma grade gigante de linhas e colunas usada para organizar informações e fazer cálculos automáticos. Diferente do papel, quando um número muda, tudo que depende dele se recalcula sozinho. Um arquivo do Excel se chama pasta de trabalho, e pode ter várias planilhas dentro — as abas na parte de baixo da tela.",
+     "intro": "Uma grade de linhas e colunas para organizar informações e fazer contas. A mágica: mudou um número, tudo que depende dele se recalcula sozinho.",
      "pontos": [
       [
        "pasta de trabalho",
@@ -8051,8 +8051,12 @@ export default function App() {
           </div>
         )}
         {t.mostrar_planilha && <ExcelFrame linhas={licao.planilha.linhas} ativa={t.celula_ativa} destaque={t.destaque} />}
-        <div style={{ marginTop: 20 }}>
-          <Btn full onClick={() => setTela("licao")}>Entendi, vamos praticar</Btn>
+        {/* botão fixo no rodapé: visível mesmo em tela pequena / navegador do Instagram */}
+        <div style={{ height: 96 }} />
+        <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 5, display: "flex", justifyContent: "center", background: "linear-gradient(to bottom, rgba(255,255,255,0), #fff 28%)" }}>
+          <div style={{ width: "100%", maxWidth: 480, padding: "18px 20px calc(14px + env(safe-area-inset-bottom))" }}>
+            <Btn full onClick={() => setTela("licao")}>Entendi, vamos praticar</Btn>
+          </div>
         </div>
       </Shell>
     );

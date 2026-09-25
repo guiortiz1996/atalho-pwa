@@ -34,8 +34,9 @@ function ambiente() {
   const dentroDeApp = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Line\/|TikTok|musical_ly|Bytedance|Snapchat|LinkedInApp|Twitter/i.test(ua);
   const instagram = /Instagram/i.test(ua);
   const instalado = window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
-  const safariIos = ios && !dentroDeApp && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS/i.test(ua);
-  return { android, ios, dentroDeApp, instagram, instalado, safariIos };
+  const navegadorIos = ios && !dentroDeApp; // Safari, Chrome, Edge ou Firefox no iPhone
+  const chromeIos = /CriOS/i.test(ua);
+  return { android, ios, dentroDeApp, instagram, instalado, navegadorIos, chromeIos };
 }
 
 function lerDispensa() {
@@ -215,14 +216,16 @@ export default function AvisoInstalar() {
     );
   }
 
-  // 3) Safari do iPhone: instrução manual
-  if (amb.safariIos && !fechado) {
+  // 3) Navegador do iPhone (Safari, Chrome...): instrução manual — a Apple não tem botão automático
+  if (amb.navegadorIos && !fechado) {
     return (
       <Cartao onFechar={fechar} posicao="baixo">
         <Titulo>Instale o Atalho no iPhone</Titulo>
         <Passos
           itens={[
-            <>Toque em <b>Compartilhar</b> <IconeCompartilhar /> na barra do Safari</>,
+            amb.chromeIos
+              ? <>Toque em <b>Compartilhar</b> <IconeCompartilhar /> no canto de cima, ao lado do endereço</>
+              : <>Toque em <b>Compartilhar</b> <IconeCompartilhar /> na barra do Safari</>,
             <>Escolha <b>“Adicionar à Tela de Início”</b></>,
           ]}
         />
