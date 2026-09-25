@@ -167,21 +167,40 @@ export default function AvisoInstalar() {
     );
   }
 
-  // 2) Chrome / Edge / Samsung: botão de instalar nativo
-  if (podeInstalar && (!fechado || veioParaInstalar)) {
-    if (veioParaInstalar) {
-      return (
-        <Fundo>
-          <Cartao posicao="centro">
-            <Icone>✅</Icone>
-            <Titulo>Agora é só instalar</Titulo>
-            <Texto>O Atalho vira um ícone na sua tela e abre como aplicativo. É grátis e ocupa quase nada.</Texto>
+  // 2a) Chegou do Instagram pelo botão "Abrir no Chrome": sempre mostra a tela de instalar.
+  //     O Chrome só libera o botão automático depois de ~30s de uso na página,
+  //     então enquanto não libera mostramos o caminho pelo menu (que funciona na hora).
+  if (veioParaInstalar && !fechado && !amb.ios) {
+    return (
+      <Fundo>
+        <Cartao posicao="centro">
+          <Icone>✅</Icone>
+          <Titulo>Agora é só instalar</Titulo>
+          <Texto>O Atalho vira um ícone na sua tela e abre como aplicativo. É grátis e ocupa quase nada.</Texto>
+          {podeInstalar ? (
             <Botao onClick={instalar}>Instalar o Atalho</Botao>
-            <Link onClick={fechar}>Agora não</Link>
-          </Cartao>
-        </Fundo>
-      );
-    }
+          ) : (
+            <>
+              <Passos
+                itens={[
+                  <>Toque nos <b>3 pontinhos ⋮</b> no canto de cima do Chrome</>,
+                  <>Toque em <b>“Instalar app”</b> ou <b>“Adicionar à tela inicial”</b></>,
+                  <>Confirme em <b>“Instalar”</b></>,
+                ]}
+              />
+              <Texto>
+                <span style={{ fontSize: 12.5 }}>Não aparece “Instalar”? Então o Atalho já está no seu celular: é só abrir pelo ícone.</span>
+              </Texto>
+            </>
+          )}
+          <Link onClick={fechar}>Agora não</Link>
+        </Cartao>
+      </Fundo>
+    );
+  }
+
+  // 2b) Chrome / Edge / Samsung aberto normalmente: cartão discreto com o botão nativo
+  if (podeInstalar && !fechado) {
     return (
       <Cartao onFechar={fechar} posicao="baixo">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
